@@ -7,3 +7,4 @@
 - Either add instructions to Overleaf to view without code, or figure out another solution to have users view without code
 - Optional: Add Work Experience section
 - Optional: Add colorful elements in background
+- Reorder such that PokeAPI isn't at forefront; alternatively figure out way to date projects truly, but sort them manually
