@@ -2327,18 +2327,24 @@ a {
 }
 
 .section {
+  box-sizing: border-box;
   grid-column-gap: 16px;
   grid-row-gap: 16px;
+  aspect-ratio: auto;
   direction: ltr;
   color: #fff;
-  column-count: 1;
+  column-count: auto;
   column-rule: 100px dotted #1b1a2000;
   white-space: normal;
   word-break: normal;
+  object-fit: fill;
   background-color: #1b1a20;
   grid-template-rows: auto auto;
   grid-template-columns: 1fr 1fr;
   grid-auto-columns: 1fr;
+  column-gap: 0;
+  margin-left: auto;
+  margin-right: auto;
   padding-left: 10%;
   padding-right: 10%;
   font-style: normal;
@@ -2846,7 +2852,11 @@ a {
 }
 
 .main-image {
+  aspect-ratio: 3 / 2;
+  column-count: auto;
+  object-fit: cover;
   margin-bottom: 39px;
+  text-decoration: underline;
 }
 
 .byline-wrapper {
@@ -2909,7 +2919,14 @@ a {
 }
 
 .blog-post {
+  grid-column-gap: 16px;
+  grid-row-gap: 16px;
+  grid-template-rows: auto auto;
+  grid-template-columns: 1fr 1fr;
+  grid-auto-columns: 1fr;
+  height: 700px;
   margin-bottom: 100px;
+  display: block;
 }
 
 .about-content {
@@ -3155,6 +3172,19 @@ a {
 
 .link-3 {
   text-align: center;
+}
+
+.collection-list {
+  grid-column-gap: 16px;
+  grid-row-gap: 16px;
+  aspect-ratio: auto;
+  text-align: left;
+  column-count: auto;
+  grid-template-rows: auto auto;
+  grid-template-columns: 1fr 1fr;
+  grid-auto-columns: 1fr;
+  text-decoration: none;
+  display: block;
 }
 
 @media screen and (max-width: 991px) {
