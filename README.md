@@ -4,7 +4,12 @@
 **To-Do for Next Commit**
 
 8/21/25 pre 2 blog post
-- using exFlow, did one export for the js and whatnot, then doing a second export with all pages and nothing else. otherwise hits 20mb cap 
+- using exFlow, did one export for the js and whatnot, then doing a second export with all pages and nothing else. otherwise hits 20mb cap
+- most likely last time using exFlow due to cap, paying would cost $6/m or per export
+- alt:
+-     notion
+-     httrack legacy exporter
+-     *** paste repo in llm to create blogpost file, categories file, js, css, and then manually drop in images file
 
 3/21/25
 - IMPORTANT!!! manually added a link to powerbi dashboard in body text. don't forget to keep that change when importing next webflow update
