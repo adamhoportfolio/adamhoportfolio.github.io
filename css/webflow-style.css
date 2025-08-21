@@ -2046,20 +2046,12 @@ textarea.w-input, textarea.w-select {
   display: grid;
 }
 
-@font-face {
-  font-family: Dmsans Variablefont Opsz Wght;
-  src: url("../images/dmsans-variablefont_opsz-2cwght.ttf") format("truetype");
-  font-weight: 100 1000;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: Satoshi;
-  src: url("../images/satoshi-medium.ttf") format("truetype");
-  font-weight: 500;
-  font-style: normal;
-  font-display: swap;
+.w-code-component > * {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
 }
 
 :root {
@@ -2113,6 +2105,12 @@ textarea.w-input, textarea.w-select {
   .w-layout-blockcontainer {
     max-width: none;
   }
+}
+
+body {
+  color: #000000bd;
+  font-size: 16px;
+  line-height: 20px;
 }
 
 h1 {
@@ -3295,4 +3293,19 @@ a {
   .bold-text {
     margin-top: 1px;
   }
+}
+
+@font-face {
+  font-family: 'Dmsans Variablefont Opsz Wght';
+  src: url('https://cdn.prod.website-files.com/6675fef784ac8a70b3b90776/67aa94cc2958e3df0eb937d2_DMSans-VariableFont_opsz%2Cwght.ttf') format('truetype');
+  font-weight: 100 1000;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Satoshi';
+  src: url('https://cdn.prod.website-files.com/6675fef784ac8a70b3b90776/67aa963089965648170ccc93_Satoshi-Medium.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
 }
