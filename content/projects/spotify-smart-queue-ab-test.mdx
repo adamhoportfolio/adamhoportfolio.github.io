@@ -1,0 +1,56 @@
+---
+title: "Spotify Smart Queue - End-to-End A/B Test (Simulated)"
+date: "2026-10-11"
+category: "A/B Testing"
+summary: "A simulated end-to-end experiment for a 'Next Recommended Songs' banner on a Spotify clone: metrics, tracking plan, power analysis, SRM check, BigQuery, Mixpanel, and a launch decision memo. All data is simulated."
+image: "/images/smart-queue-thumb.jpg"
+---
+<Callout title="All data in this project is simulated">
+This is a portfolio project built on a Spotify clone. It uses no real Spotify users or data, and it is not affiliated with Spotify. The results show the method, not real-world effects.
+</Callout>
+
+## Question
+
+Does an interactive 3-choice "Next Recommended Songs" banner (Smart Queue) increase listening time without hurting retention or stability?
+
+## Result
+
+| Metric | Outcome |
+|---|---|
+| Primary OEC (listening minutes per user per week) | +26.6 min/user/week (+3.2%, p = 1.2e-5) |
+| Expected effect at steady state | about +2.7% after novelty decay |
+| Guardrails (retention, crash rate) | Passed |
+| Recommendation | Launch with a 5% holdout |
+
+## Design
+
+- 14,420 simulated users over 28 days (398,080 rows)
+- Power analysis: 7,210 users per variant
+- Metrics defined up front: one OEC, guardrail, secondary, and diagnostic metrics
+- Tests pre-registered before the data was generated
+- Sample ratio mismatch (SRM) check before any hypothesis test
+- Causal analysis with intent-to-treat (ITT) and complier average causal effect (CACE)
+
+## Pipeline
+
+1. Business question and metric definitions
+2. Tracking plan
+3. Power analysis and pre-registered tests
+4. Data simulation
+5. SRM check
+6. BigQuery aggregation
+7. Hypothesis testing
+8. Mixpanel import and dashboard
+9. Decision memo
+
+
+## Links
+
+- [Full write-up and decision memo (Notion)](https://alpine-donkey-0c0.notion.site/Spotify-Smart-Queue-Feature-A-B-Test-Experiment-Document-3f6f9fe7805d80c68c15e2c5daba1b96?source=copy_link)
+- [Tracking plan (Notion)](https://app.notion.com/p/Tracking-Implementation-Plan-3f6f9fe7805d807bb79bdfb582966b8d?source=copy_link)
+- [Live mockup with control/treatment toggle and event log](https://spotify-smart-queue-mockup.vercel.app/)
+- [Code, notebook, SQL, and reproduction steps (GitHub)](https://github.com/wacsvn/spotify-smart-queue-ab-test/tree/main)
+
+## Tools
+
+Python (NumPy, pandas, SciPy, statsmodels, matplotlib), Jupyter, Google BigQuery, Mixpanel (Import API, dashboards), Next.js, React, Vercel, Notion, GitHub.

@@ -1,0 +1,25 @@
+import Link from "next/link";
+import { formatDate } from "@/lib/posts";
+
+export default function ProjectCard({ p }) {
+  const href = p.external || `/blog-posts/${p.slug}/`;
+  const ext = Boolean(p.external);
+  const linkProps = ext ? { target: "_blank", rel: "noopener noreferrer" } : {};
+  const Anchor = ext ? "a" : Link;
+
+  return (
+    <article className="card">
+      <Anchor href={href} {...linkProps} className="card-image" aria-hidden="true" tabIndex={-1}>
+        {p.image ? <img src={p.image} alt="" loading="lazy" /> : <span className="card-noimg" />}
+      </Anchor>
+      <h2 className="card-title">{p.title}</h2>
+      <p className="byline">
+        {formatDate(p.date)} <span>In</span> {p.category}
+      </p>
+      <p className="card-summary">{p.summary}</p>
+      <Anchor href={href} {...linkProps} className="card-more">
+        Read more<span className="sr-only">: {p.title}</span>
+      </Anchor>
+    </article>
+  );
+}
