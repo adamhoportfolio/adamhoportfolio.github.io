@@ -1,40 +1,103 @@
-# Portfolio (Next.js + Markdown, static export)
+# Adam Ho portfolio
 
-Add a project = add one file in `content/projects/`, push to `main`. Done.
+Live: https://adamhoportfolio.github.io
+Stack: Next.js static export, markdown posts, deployed by GitHub Actions to GitHub Pages.
 
-## Add a project
-Create `content/projects/my-slug.md` (or `.mdx` to use `<Callout>`):
+Pushing to `main` publishes the site (about 1-2 minutes).
 
-    ---
-    title: "Project title"
-    date: "2026-10-11"          # ISO format, controls sort order
-    category: "A/B Testing"
-    summary: "One or two sentences for the card."
-    image: "/images/my-thumb.png"   # file goes in public/images/
-    external: "https://..."     # optional: card links off-site instead of a page
-    ---
-    Body in markdown.
+---
 
-URL becomes `/blog-posts/my-slug/` (same pattern as the old site, so old links keep working).
+## Add a new post
 
-## First-time setup (in order)
-1. Check out the OLD site into a separate folder (e.g. `../old-site`). You need its `index.html` and `blog-posts/`.
-2. In your repo: `git checkout -b restructure`. Delete the old `css/`, `js/`, `*.html`, `blog-posts/`. KEEP `images/`.
-3. Copy this project's files into the repo root. Move `images/` to `public/images/`.
-4. `npm install`
-5. `npm run convert -- ../old-site` converts every old post to `content/projects/*.md`.
-   Existing files are skipped; add `--force` to overwrite.
-6. Replace every `TODO` in `content/projects/spotify-smart-queue-ab-test.mdx` (Notion, tracking plan, Vercel mockup, Mixpanel screenshot). Add `public/images/smart-queue-thumb.png`.
-7. `npm run check` lists every remaining problem (TODOs, missing images, bad internal links).
-8. `npm run dev`, review at http://localhost:3000. Then `npm run build` (output in `out/`).
-9. Push the branch, open a PR, merge to `main`.
-10. GitHub repo, Settings, Pages: set Source to **GitHub Actions** (one time). `.github/workflows/deploy.yml` then deploys on every push to `main`.
-11. Open the live URL in incognito. Click every link.
+A post is one text file in `content/projects/`. No HTML, no code edits. The card on the home page, the post page, and the sort order are all generated from that file.
 
-## Notes
-- URL stays `https://<username>.github.io`. No DNS change, resume link unchanged.
-- The repo must be named `<username>.github.io` to serve at the root.
-- CI sets `CI=true`, so the build FAILS on any TODO or missing image. Locally it only warns.
-- Site-wide text (name, tagline, links): `lib/site.js`. About page: `content/about.md`.
-- Vercel also works unchanged: import the repo, framework Next.js. (Hobby plan is non-commercial.)
-- Skim every converted `.md` for oddities (code blocks, tables). The converter warns about dropped iframes.
+### 1. Write the file
+
+Filename = URL. `my-new-post.md` becomes `/blog-posts/my-new-post/`.
+Use lowercase, hyphens, no spaces.
+
+```
+---
+title: "Project title"
+date: "2026-11-02"
+category: "A/B Testing"
+summary: "One or two sentences. Shown on the card and in link previews."
+image: "/images/my-new-post-thumb.png"
+---
+## Section heading
+
+Body text in markdown. **Bold**, lists, tables, `code`, and images all work.
+
+![Alt text](/images/my-new-post-chart.png)
+```
+
+Rules:
+- Wrap `title` and `summary` in double quotes. A colon without quotes breaks the file.
+- `date` must be `YYYY-MM-DD`. Newest date shows first.
+- `category` is free text.
+- Start body headings at `##`. The title is already the page heading.
+
+Variants:
+- **Card that links off-site** (Notion, Deepnote, etc.): add `external: "https://..."` to the header. The body can be empty and no page is generated.
+- **Warning box:** name the file `.mdx` instead of `.md`, then use `<Callout title="Heads up">text</Callout>`. Use this for the simulated-data notice on simulated projects.
+- Plain `.md` files can't use `<Callout>`.
+
+### 2. Add images
+
+- Put files in `public/images/`. Reference them as `/images/name.png`, with no `public` in the path.
+- Thumbnails are cropped to 3:2. Aim for 1200x800 and under 500KB.
+- Lowercase names, no spaces.
+
+### 3. Publish (pick one)
+
+**A. In the browser (no terminal)**
+1. Go to the repo on github.com, open `content/projects/`.
+2. Add file, then Create new file. Type the filename, paste the contents.
+3. For images: open `public/images/`, Add file, then Upload files.
+4. Commit directly to `main`.
+
+**B. Locally in VS Code (lets you preview first)**
+```
+git checkout main
+git pull
+# create the .md file and add images, then:
+npm run dev        # preview at http://localhost:3000
+npm run check      # lists TODOs, missing images, bad links
+git add .
+git commit -m "Add post: my-new-post"
+git push
+```
+
+### 4. Verify
+- Repo, Actions tab: the latest run should be green (1-2 minutes).
+- Open the live URL in an incognito window. Click the new card and every link in it.
+- If the run is red, open it and read the error. Common causes:
+  - a `TODO` left in a file
+  - an image path that doesn't exist in `public/images/`
+  - quotes missing in the header
+- A failed build never replaces the live site. The old version stays up.
+
+### Using Claude to draft a post
+Paste this with your notes:
+
+> Write a markdown post for my portfolio. Output only the file contents: a header with title, date, category, summary, image (format below), then the body using `##` headings. No HTML. Header format: [paste the block from step 1].
+
+Review the output before publishing. It must not claim anything the project doesn't show.
+
+---
+
+## Edit or remove a post
+- Edit: open the file in `content/projects/`, change it, commit.
+- Remove: delete the file, commit. The old URL will 404.
+- Hide without deleting: move the file out of `content/projects/`.
+
+## Site-wide text
+- Name, tagline, GitHub and LinkedIn links, site URL: `lib/site.js`
+- About page: `content/about.md`
+- Colors and fonts: top of `app/globals.css`
+
+## Rules to remember
+- Never commit `node_modules`, `.next`, `out`, or `old-site` (listed in `.gitignore`).
+- Simulated or fictional data must say so near the top of the post.
+- Don't paste API tokens or keys into any file. This repo is public.
+- Run `npm install` once after cloning on a new machine.
