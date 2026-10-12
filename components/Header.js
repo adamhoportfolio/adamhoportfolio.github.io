@@ -8,6 +8,8 @@ export default function Header() {
         <Link href="/">Projects</Link>
         <Link href="/about/">About</Link>
         <a href={site.github} target="_blank" rel="noopener noreferrer">GitHub</a>
+        <a href={site.linkedin} target="_blank" rel="noopener noreferrer">LinkedIn</a>
+        <a href={site.resume} target="_blank" rel="noopener noreferrer">Resume</a>
       </nav>
       <Link href="/" className="site-name">{site.name}</Link>
       <p className="site-tagline">{site.tagline}</p>
