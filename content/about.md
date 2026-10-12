@@ -1,9 +1,7 @@
 ---
-heading: "Optimizing Data for Consumer Tech and Beyond"
-photo: "/images/sitgrad.jpg"
+heading: "Software Integrity and Experimentation"
+photo: "/images/sitgradv2.jpeg"
 ---
-UC Irvine Data Science graduate (2024) with two years of professional experience across quality engineering and data analysis.
+I’m an engineer who cares whether software actually works for users, and I use data to prove it. During my most recent role at QA Wolf, I wrote Playwright and TypeScript automation suites for our SaaS clients' CI/CD pipelines. I’ve also utilized my data analysis skills on both Google’s Android XR team and Apple’s Vision Pro research, coordinating user studies and analyzing the results. I graduated from UC Irvine in Data Science (2024).
 
-As a QA Automation Engineer at QA Wolf, I wrote Playwright and TypeScript test suites for B2B SaaS clients in Agile/Scrum teams. I have also done contract data analysis on Google's Android XR team and Apple's Vision Pro research, coordinating user studies and analyzing the results.
-
-My projects include a capstone prediction model for a real estate consultancy, data analysis for a neurocognitive imaging lab, and an end-to-end simulated A/B experiment. All of them are on the Projects page.
+That mix of testing rigor and analysis shows up in my projects too: an end-to-end A/B experiment with pre-registered tests and validation checks, a capstone prediction model for a real estate consultancy, a data ingestion pipeline for tracking GPU prices, and many more on the Projects page.
