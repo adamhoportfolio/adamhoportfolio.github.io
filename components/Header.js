@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { site } from "@/lib/site";
+import DecodeText from "./DecodeText";
+import RotatingTagline from "./RotatingTagline";
 
 export default function Header() {
   return (
@@ -11,8 +13,8 @@ export default function Header() {
         <a href={site.linkedin} target="_blank" rel="noopener noreferrer">LinkedIn</a>
         <a href={site.resume} target="_blank" rel="noopener noreferrer">Resume</a>
       </nav>
-      <Link href="/" className="site-name">{site.name}</Link>
-      <p className="site-tagline">{site.tagline}</p>
+      <Link href="/" className="site-name"><DecodeText text={site.name} /></Link>
+      <RotatingTagline items={site.taglines ?? [site.tagline]} />
     </header>
   );
 }
