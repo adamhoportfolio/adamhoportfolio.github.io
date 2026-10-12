@@ -1,5 +1,6 @@
 // Convert an exported Webflow site into content/projects/*.md
 // Usage: node scripts/convert-webflow.mjs <path-to-old-site> [--force]
+//    or: node scripts/convert-webflow.mjs --file <post.html> [--force]   (one post, no index.html needed)
 //   <path-to-old-site> must contain index.html and blog-posts/<slug>.html
 // Existing files in content/projects are skipped unless --force is passed.
 import fs from "node:fs";
@@ -10,10 +11,11 @@ import { gfm } from "turndown-plugin-gfm";
 
 const [, , oldDir, flag] = process.argv;
 if (!oldDir) {
-  console.error("usage: node scripts/convert-webflow.mjs <path-to-old-site> [--force]");
+  console.error("usage: node scripts/convert-webflow.mjs <path-to-old-site> [--force]\n   or: node scripts/convert-webflow.mjs --file <post.html> [--force]");
   process.exit(1);
 }
-const force = flag === "--force";
+const FILE_MODE = oldDir === "--file";
+const force = flag === "--force" || process.argv[4] === "--force";
 const OUT = path.join(process.cwd(), "content", "projects");
 fs.mkdirSync(OUT, { recursive: true });
 
@@ -50,6 +52,33 @@ function fenceDiagrams(md) {
 }
 
 const q = (s) => JSON.stringify(s); // JSON strings are valid YAML
+
+if (FILE_MODE) {
+  // Single post: read metadata from the post page itself.
+  const file = flag;
+  if (!file || !fs.existsSync(file)) { console.error(`file not found: ${file}`); process.exit(1); }
+  const slug = path.basename(file, ".html");
+  const target = path.join(OUT, `${slug}.md`);
+  if (fs.existsSync(target) && !force) { console.log(`skip (exists)  ${slug}  (add --force to overwrite)`); process.exit(0); }
+  const $ = cheerio.load(fs.readFileSync(file, "utf8"));
+  const rt = $(".blog-content.w-richtext").first();
+  if (!rt.length) { console.error("no .blog-content.w-richtext found: not a Webflow post page?"); process.exit(1); }
+  rt.find("p").each((_, p) => { if (!$(p).text().replace(/[\u200b-\u200d\uFEFF\s]/g, "") && !$(p).find("img").length) $(p).remove(); });
+  rt.find("[role]").removeAttr("role");
+  rt.find("img").each((_, im) => { $(im).attr("src", fixSrc($(im).attr("src"))).removeAttr("srcset").removeAttr("sizes"); });
+  if (rt.find("iframe, .w-embed").length) console.warn(`EMBED FOUND    ${slug}: iframes/embeds are dropped; re-add by hand`);
+  const body = fenceDiagrams(td.turndown(rt.html() || "")).trim() + "\n";
+  const title = $(".post-heading").first().text().trim();
+  const date = isoDate($(".byline-text").first().text()) || "2024-01-01";
+  const category = $(".byline-link").first().text().trim();
+  const image = fixSrc($("img.main-image").attr("src"));
+  const firstP = rt.find("p").first().text().trim().replace(/\s+/g, " ");
+  const summary = (firstP.length > 200 ? firstP.slice(0, 197).replace(/\s+\S*$/, "") + "..." : firstP) || title;
+  const fm = ["---", `title: ${q(title)}`, `date: ${q(date)}`, `category: ${q(category)}`, `summary: ${q(summary)}`, `image: ${q(image)}`, "---", ""].join("\n");
+  fs.writeFileSync(target, fm + body);
+  console.log(`wrote ${slug}.md\nREVIEW: title, date (post pages can show a different date than the card), summary (auto-taken from the first paragraph), image path.`);
+  process.exit(0);
+}
 
 const idx = cheerio.load(fs.readFileSync(path.join(oldDir, "index.html"), "utf8"));
 const items = idx(".blog-post").toArray().map((el) => {

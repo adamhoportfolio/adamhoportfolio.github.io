@@ -4,6 +4,7 @@ date: "2024-06-01"
 category: "Personal"
 summary: "Understanding the landscape of data science salaries is crucial for job\n                            seekers and employers alike. To provide a clear picture, I developed a Tableau dashboard\n                            showcasing average data science job salaries worldwide."
 image: "/images/ds-20dashboard-201.png"
+draft: true
 ---
 Understanding the landscape of data science salaries is crucial for job seekers and employers alike. To provide a clear picture, I developed a Tableau dashboard showcasing average data science job salaries worldwide.
 
