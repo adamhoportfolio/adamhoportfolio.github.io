@@ -2,7 +2,7 @@
 title: "'Plant Co.' Performance Dashboard w/ Power BI"
 date: "2025-03-16"
 category: "Dashboards"
-summary: "Interact with the dashboard on Power BI here!"
+summary: "In this post, I'll walk through my process of developing a comprehensive sales performance dashboard for fictitious nursery store Plant Co. using Power BI."
 image: "/images/screenshot-202025-03-17-20182820.jpg"
 ---
 [Interact with the dashboard on Power BI here!](https://app.powerbi.com/view?r=eyJrIjoiOWE2OGM3NjgtNGQzNS00NGQyLWJjMmMtMTk0MDQ5ZDE5ZDI0IiwidCI6IjY4ZDQ1MzNjLWVhZTYtNDgzMy05OWNjLTdhOTcwNGFjODcwYiIsImMiOjZ9)

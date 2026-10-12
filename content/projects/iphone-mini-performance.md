@@ -2,7 +2,7 @@
 title: "iPhone Mini Series - Performance Dashboard w/ Power BI"
 date: "2025-05-01"
 category: "Dashboards"
-summary: "Link to Dashboard"
+summary: "This outlines the process of developing a multi-page **Power BI dashboard** to analyze the **iPhone Mini product line’s performance** relative to Apple’s broader iPhone portfolio."
 image: "/images/screenshot-202025-08-20-20at-204.13.16-e2-80-afpm.png"
 ---
 # iPhone Mini Sales Performance Dashboard w/ Power BI

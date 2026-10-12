@@ -2,7 +2,7 @@
 title: "ICS Search Engine & Web Crawler"
 date: "2023-12-08"
 category: "UCI"
-summary: "A robust web crawler to scrape extensive textual data from diverse ICS\n                            webpages + a custom search engine that indexes and queries data in under 300 milliseconds.\n                            This application utilizes libraries such as bs4, pandas, and NLTK, as well as advanced page\n                            ranking algorithms to optimize search result relevance and efficiency. This project not only\n                            deepened my expertise in web scraping and algorithmic optimization but also highlighted the\n                            practical applications of data acquisition."
+summary: "A robust web crawler to scrape extensive textual data from diverse ICS\n                            webpages + a custom search engine that indexes and queries data in under 300 milliseconds.\n                            This application utilizes libraries such as bs4, pandas, and NLTK, as well as advanced page\n                            ranking algorithms to optimize search result relevance and efficiency."
 image: "/images/screenshot-202023-11-03-20211501.png"
 ---
 Follow along the code for this project at GitHub! [Crawler](https://github.com/wacsvn/ICS-Web-Crawler-A2-29) | [Search Engine](https://github.com/wacsvn/ICS-Search-Engine-38-A3)

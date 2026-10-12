@@ -2,7 +2,7 @@
 title: "Neurocognitive Imaging Data Analysis"
 date: "2024-04-01"
 category: "Research"
-summary: "An intersection of brain imaging, data analysis, and the legal system\n                            defined my experience as an Imaging Analysis Research Assistant at the University\n                            Neurocognitive Imaging lab. Over several months, I analyzed PET and DTI scans using MATLAB\n                            and SPM, mapping regions of interest and producing z-score maps. Our research provided\n                            pivotal evidence in three criminal trials, underscoring the practical relevance of\n                            neuroimaging and enhancing my proficiency in statistical inference in a unique context."
+summary: "An intersection of brain imaging, data analysis, and the legal system\n                            defined my experience as an Imaging Analysis Research Assistant at the University\n                            Neurocognitive Imaging lab. Over several months, I analyzed PET and DTI scans using MATLAB\n                            and SPM, mapping regions of interest and producing z-score maps."
 image: "/images/vinci_1.jpg"
 ---
 ## Insights into My Journey as an Imaging Analysis Research Assistant
