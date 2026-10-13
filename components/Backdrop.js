@@ -21,7 +21,7 @@ export default function Backdrop() {
       return {
         x: Math.random() * w, y: Math.random() * h,
         bx: Math.cos(a) * sp, by: Math.sin(a) * sp,
-        vx: 0, vy: 0, r: 1 + Math.random() * 1.2,
+        vx: 0, vy: 0, r: 1.2 + Math.random() * 1.4,
       };
     };
 
@@ -62,13 +62,13 @@ export default function Backdrop() {
           const dx = dots[i].x - dots[j].x, dy = dots[i].y - dots[j].y;
           const d2 = dx * dx + dy * dy;
           if (d2 < LINK * LINK) {
-            const a = (1 - Math.sqrt(d2) / LINK) * 0.14;
+            const a = (1 - Math.sqrt(d2) / LINK) * 0.4;
             ctx.strokeStyle = `rgba(150,170,215,${a})`;
             ctx.beginPath(); ctx.moveTo(dots[i].x, dots[i].y); ctx.lineTo(dots[j].x, dots[j].y); ctx.stroke();
           }
         }
       }
-      ctx.fillStyle = "rgba(190,200,235,0.42)";
+      ctx.fillStyle = "rgba(190,200,235,0.52)";
       for (const d of dots) { ctx.beginPath(); ctx.arc(d.x, d.y, d.r, 0, Math.PI * 2); ctx.fill(); }
     }
 

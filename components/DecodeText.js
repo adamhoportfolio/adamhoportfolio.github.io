@@ -1,17 +1,20 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 
 const GLYPHS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
-// Letters scramble, then lock in left to right. Plays once per browser session.
+// Letters scramble, then lock in left to right on each page load.
 // Server HTML and screen readers always get the real text.
 export default function DecodeText({ text }) {
   const ref = useRef(null);
   const [out, setOut] = useState(text);
+  const pathname = usePathname();
 
   useEffect(() => {
+    setOut(text);
+    if (pathname !== "/") return;
     if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    try { if (sessionStorage.getItem("decoded")) return; } catch {}
     const el = ref.current;
     if (el) el.style.minWidth = `${el.offsetWidth}px`; // hold width so the layout doesn't jump
     const DURATION = 900;
@@ -29,12 +32,11 @@ export default function DecodeText({ text }) {
       else {
         setOut(text);
         if (el) el.style.minWidth = "";
-        try { sessionStorage.setItem("decoded", "1"); } catch {}
       }
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [text]);
+  }, [pathname, text]);
 
   return (
     <span ref={ref} className="decode">
