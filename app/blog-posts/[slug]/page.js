@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { getAllProjects, getProject, formatDate } from "@/lib/posts";
 import Mdx from "@/components/Mdx";
+import Video from "@/components/Video";
 
 export const dynamicParams = false; // required for static export
 
@@ -28,7 +29,17 @@ export default async function Project({ params }) {
 
   return (
     <article className="post">
-      {p.image ? <img className="post-image" src={p.image} alt="" /> : null}
+      {p.video ? (
+        <Video
+          className="post-video"
+          src={p.video}
+          poster={p.image}
+          title={p.title}
+          caption={p.videoCaption || "Video TL;DR"}
+        />
+      ) : p.image ? (
+        <img className="post-image" src={p.image} alt="" />
+      ) : null}
       <h1 className="post-title">{p.title}</h1>
       <p className="byline center">
         {formatDate(p.date)} <span>In</span> {p.category}

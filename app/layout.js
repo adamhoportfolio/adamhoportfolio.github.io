@@ -5,6 +5,7 @@ import Footer from "@/components/Footer";
 import Backdrop from "@/components/Backdrop";
 import CardGlow from "@/components/CardGlow";
 import ReadingProgress from "@/components/ReadingProgress";
+import Analytics from "@/components/Analytics";
 import { site } from "@/lib/site";
 
 export const metadata = {
@@ -28,6 +29,7 @@ export default function RootLayout({ children }) {
       </head>
       <body>
         <Backdrop />
+        <Analytics />
         <ReadingProgress />
         <CardGlow />
         <a href="#main" className="skip">Skip to content</a>

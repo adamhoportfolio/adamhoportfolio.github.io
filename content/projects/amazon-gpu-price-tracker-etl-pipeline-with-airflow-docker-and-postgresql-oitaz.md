@@ -1,6 +1,6 @@
 ---
 title: "Amazon GPU Price Tracker - ETL Pipeline w/ airflow, postgres"
-date: "2025-07-02"
+date: "2025-08-02"
 category: "Data Engineering"
 summary: "Building an automated data pipeline that extracts GPU listings from Amazon, transforms the data, and loads it into a PostgreSQL database for analysis. This post walks through the development of this ETL pipeline using Apache Airflow for orchestration, Docker for containerization, and PostgreSQL for data storage."
 image: "/images/amazongputhumb.jpg"

@@ -7,8 +7,8 @@ export default function Home() {
     <div className="wrap">
       <h1 className="page-title">Explore my latest personal projects</h1>
       <div className="grid">
-        {projects.map((p) => (
-          <ProjectCard key={p.slug} p={p} />
+        {projects.map((p, i) => (
+          <ProjectCard key={p.slug} p={p} position={i + 1} />
         ))}
       </div>
     </div>

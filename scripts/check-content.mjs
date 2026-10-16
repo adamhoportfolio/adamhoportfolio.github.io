@@ -33,6 +33,14 @@ for (const file of walk(dir)) {
   for (const img of imgs)
     if (img.startsWith("/") && !fs.existsSync(path.join(root, "public", img)))
       problems.push(`${rel}: image not found: public${img}`);
+  // local video files must exist and stay under GitHub's 100 MB file limit
+  const vids = [data.video, ...[...raw.matchAll(/src="(\/videos\/[^"]+)"/g)].map((m) => m[1])].filter(Boolean);
+  for (const vid of vids) {
+    if (!vid.startsWith("/")) continue;
+    const f = path.join(root, "public", vid);
+    if (!fs.existsSync(f)) problems.push(`${rel}: video not found: public${vid}`);
+    else if (fs.statSync(f).size > 90 * 1024 * 1024) problems.push(`${rel}: video over 90 MB (GitHub rejects >100 MB): public${vid}`);
+  }
   // internal project links must resolve
   for (const m of raw.matchAll(/\]\(\/blog-posts\/([^/)\s]+)\/?\)/g))
     if (!slugs.has(m[1])) problems.push(`${rel}: link to unknown project: ${m[1]}`);

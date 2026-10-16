@@ -1,6 +1,6 @@
 ---
 title: "Tactile Entertainment - Level Gate A/B Test"
-date: "2025-08-20"
+date: "2025-07-20"
 category: "A/B Testing"
 summary: "Analyzed a large-scale A/B test for the mobile game 'Cookie Cats' using Python, measuring the impact of moving an in-game gate (level 30 → 40) on player retention and engagement."
 image: "/images/cookiecatsthumb6.jpg"

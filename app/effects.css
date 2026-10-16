@@ -42,3 +42,16 @@
     @keyframes rise { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
   }
 }
+
+/* localhost-only analytics debug log (components/Analytics.js) */
+.devlog {
+  position: fixed; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom, 0px)); z-index: 30;
+  width: min(380px, calc(100vw - 24px)); background: rgba(20, 20, 26, .94); border: 1px solid var(--line);
+  border-radius: 8px; font: 12px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--body);
+}
+.devlog button { all: unset; display: block; width: 100%; box-sizing: border-box; padding: 8px 12px; cursor: pointer; color: var(--muted); }
+.devlog ol { list-style: none; margin: 0; padding: 0 12px 10px; max-height: 40vh; overflow-y: auto; }
+.devlog li { padding: 3px 0; border-top: 1px solid var(--line); overflow-wrap: anywhere; }
+.devlog time { color: var(--muted); }
+.devlog strong { color: var(--link); font-weight: 600; }
+.devlog-empty { color: var(--muted); }

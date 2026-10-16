@@ -7,13 +7,13 @@ export default function Header() {
   return (
     <header className="site-header">
       <nav className="nav" aria-label="Main">
-        <Link href="/">Projects</Link>
-        <Link href="/about/">About</Link>
-        <a href={site.github} target="_blank" rel="noopener noreferrer">GitHub</a>
-        <a href={site.linkedin} target="_blank" rel="noopener noreferrer">LinkedIn</a>
-        <a href={site.resume} target="_blank" rel="noopener noreferrer">Resume</a>
+        <Link href="/" data-track="nav_click" data-track-item="projects">Projects</Link>
+        <Link href="/about/" data-track="nav_click" data-track-item="about">About</Link>
+        <a href={site.github} target="_blank" rel="noopener noreferrer" data-track="nav_click" data-track-item="github">GitHub</a>
+        <a href={site.linkedin} target="_blank" rel="noopener noreferrer" data-track="nav_click" data-track-item="linkedin">LinkedIn</a>
+        <a href={site.resume} target="_blank" rel="noopener noreferrer" data-track="nav_click" data-track-item="resume">Resume</a>
       </nav>
-      <Link href="/" className="site-name"><DecodeText text={site.name} /></Link>
+      <Link href="/" className="site-name" data-track="nav_click" data-track-item="home_logo"><DecodeText text={site.name} /></Link>
       <RotatingTagline items={site.taglines ?? [site.tagline]} />
     </header>
   );
