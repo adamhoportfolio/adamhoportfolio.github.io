@@ -1,0 +1,47 @@
+---
+title: "Hiring Market Pulse - Tested Data Pipeline on Databricks + dbt"
+date: "2026-10-22"
+category: "Data Pipeline & Quality"
+summary: "A daily pipeline that turns 11,500+ Hacker News job posts and BLS job-openings data into a dashboard, published only after 52 dbt data tests pass. The tests are themselves tested, and the text extraction is scored against hand-checked posts."
+image: "/images/hiring-market-pulse-thumb.jpg"
+---
+<Callout title="Check out the resources for this project here">
+- [Live dashboard (Streamlit)](https://hiring-market-pulse.streamlit.app/)
+- [Data model documentation (dbt docs: lineage, columns, tests)](https://wacsvn.github.io/hiring-market-pulse/)
+- [Code, tests, and CI (GitHub)](https://github.com/wacsvn/hiring-market-pulse)
+- [Case study: tests that couldn't fail](https://github.com/wacsvn/hiring-market-pulse/blob/main/docs/case-studies/tests-that-couldnt-fail.md)
+
+The data covers companies that post in Hacker News' monthly "Who is hiring?" thread: mostly startups, engineering-heavy, and concentrated in U.S. tech hubs. It is a slice of the tech market, not all of it.
+</Callout>
+
+## Question
+
+What do three years of startup hiring posts say about remote work, pay transparency, and in-demand skills? And how can a reader know the numbers are right?
+
+## Pipeline Areas
+
+1. Ingestion from the Hacker News and BLS APIs, with data contracts and a quarantine for rejected records
+2. Rules-based extraction of work mode, salary, role, seniority, and tech stack from free text
+3. Load to Databricks (Unity Catalog volume to Delta tables)
+4. dbt staging and mart models with 52 data tests
+5. Gated publishing: the dashboard updates only if every hard test passes; otherwise a GitHub issue opens
+6. Streamlit dashboard with a built-in data-quality panel
+7. dbt docs site with lineage and per-column tests
+
+## Quality
+
+- **Data tests:** uniqueness, relationships, accepted values, salary rules, no missing months, freshness, schema drift, and a cross-source divergence warning
+- **Mutation check:** the data is corrupted 11 different ways, and each matching test must fail (11/11)
+- **Accuracy audit:** the extractor is scored against 50 hand-checked posts. It found a definition bug that understated remote work by about 5 points; work-mode accuracy went from 91% to 98% and seniority from 70% to 91%
+- **CI/CD:** lint, types, 79 unit tests, dbt in per-PR Databricks schemas, 13 Playwright tests, a daily refresh, and a smoke test of the live site
+
+## Findings (Nov 2023 to Sep 2026)
+
+- Posts listing a salary rose from 13% to 31%
+- Remote-friendly posts fell from 67% to 55%; onsite-only rose from 15% to 25%
+- LLM/GenAI mentions nearly doubled, to 15% of posts
+- HN post volume fell 6% while official Information-sector openings fell 35%, so HN is not a stand-in for the broader market
+
+## Tools
+
+Python (pandas, pydantic, httpx), SQL, dbt, Databricks (Unity Catalog, Delta), Streamlit, Plotly, Playwright (TypeScript), pytest, Hypothesis, GitHub Actions, GitHub Pages, Claude Code
