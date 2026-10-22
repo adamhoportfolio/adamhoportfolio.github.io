@@ -9,7 +9,9 @@ image: "/images/hiring-market-pulse-thumb.jpg"
 - [Live dashboard (Streamlit)](https://hiring-market-pulse.streamlit.app/)
 - [Data model documentation (dbt docs: lineage, columns, tests)](https://wacsvn.github.io/hiring-market-pulse/)
 - [Code, tests, and CI (GitHub)](https://github.com/wacsvn/hiring-market-pulse)
+- [Analysis memo: findings with SQL (notebook)](https://github.com/wacsvn/hiring-market-pulse/blob/main/analysis/hiring_market_findings.ipynb)
 - [Case study: tests that couldn't fail](https://github.com/wacsvn/hiring-market-pulse/blob/main/docs/case-studies/tests-that-couldnt-fail.md)
+- [Incident report: two production failures and the fixes](https://github.com/wacsvn/hiring-market-pulse/blob/main/docs/incidents/2026-10-22-refresh-failures.md)
 
 The data covers companies that post in Hacker News' monthly "Who is hiring?" thread: mostly startups, engineering-heavy, and concentrated in U.S. tech hubs. It is a slice of the tech market, not all of it.
 </Callout>
@@ -33,7 +35,8 @@ What do three years of startup hiring posts say about remote work, pay transpare
 - **Data tests:** uniqueness, relationships, accepted values, salary rules, no missing months, freshness, schema drift, and a cross-source divergence warning
 - **Mutation check:** the data is corrupted 11 different ways, and each matching test must fail (11/11)
 - **Accuracy audit:** the extractor is scored against 50 hand-checked posts. It found a definition bug that understated remote work by about 5 points; work-mode accuracy went from 91% to 98% and seniority from 70% to 91%
-- **CI/CD:** lint, types, 79 unit tests, dbt in per-PR Databricks schemas, 13 Playwright tests, a daily refresh, and a smoke test of the live site
+- **CI/CD:** the main branch is protected, so a change can't merge until lint, types, 90 unit tests, a dbt build with every data test, and 16 Playwright tests pass. After merge, the app and docs deploy automatically; a daily refresh publishes data only when tests pass; a smoke test checks the live site
+- **In production:** the daily refresh failed twice in its first week (a warehouse quota, then a government API outage). Both times nothing bad was published and an issue opened automatically; the fixes and a blameless write-up followed the same day
 
 ## Findings (Nov 2023 to Sep 2026)
 
