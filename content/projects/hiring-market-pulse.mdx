@@ -205,14 +205,9 @@ The fixes it prompted took work-mode accuracy from 91% to 98% and seniority from
 
 Everything mentioned thus far is automated with GitHub Actions.
 
-```text
-Lint, types, unit tests                   pass
-Scrub check                               pass
-dbt build on fixture data (Databricks)    pass
-Dashboard e2e (Playwright)                pass
-```
+![Branch protection on main: four status checks required before merging](/images/hmp/branch-protection.png)
 
-<p className="caption">Required checks on a pull request</p>
+<p className="caption">Branch protection on main: the four checks a change needs before it can merge</p>
 
 Every change goes through a pull request, and the main branch is protected, so nothing can merge until the checks pass. They cover linting with `ruff`, type checking with `mypy` and 90 unit tests using `pytest` and `Hypothesis`. There's also a full `dbt` build with every data test, against a Databricks schema set aside for CI, and browser tests for the dashboard ([shown below](#dashboard)).
 
