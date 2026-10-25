@@ -3,9 +3,10 @@ import { useEffect, useRef } from "react";
 
 // Short silent screen clip that plays on a loop, like a GIF.
 // Use in .mdx posts:  <Clip src="/videos/clip.webm" poster="/images/clip.png" label="What the clip shows" />
+// or set `heroClip:` in a post's frontmatter to play one in place of the hero image.
 // React doesn't render `muted` into the server HTML, so browsers block autoplay;
 // set it on the element and start playback after hydration instead.
-export default function Clip({ src, poster, label }) {
+export default function Clip({ src, poster, label, className = "clip" }) {
   const ref = useRef(null);
   useEffect(() => {
     const v = ref.current;
@@ -16,7 +17,7 @@ export default function Clip({ src, poster, label }) {
   return (
     <video
       ref={ref}
-      className="clip"
+      className={className}
       src={src}
       poster={poster || undefined}
       aria-label={label}

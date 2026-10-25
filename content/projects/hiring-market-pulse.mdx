@@ -4,13 +4,10 @@ date: "2026-10-22"
 category: "Data Pipeline & Quality"
 summary: "A daily pipeline that turns 11,500+ Hacker News job posts and BLS job-openings data into a dashboard, published only after 52 dbt data tests pass. The tests are themselves tested, and the text extraction is scored against labeled posts, spot-checked by hand."
 image: "/images/hiring-market-pulse-thumb.jpg"
+heroClip: "/videos/hmp-date-slider.webm"
+liveRelease: "wacsvn/hiring-market-pulse@data-latest"
 ---
-<Callout title="Project links">
-- [Live dashboard (`Streamlit`)](https://hiring-market-pulse.streamlit.app/)
-- [Data model documentation (`dbt` docs: lineage, columns, tests)](https://wacsvn.github.io/hiring-market-pulse/)
-- [Code, tests, and CI (GitHub)](https://github.com/wacsvn/hiring-market-pulse)
-- [Analysis memo: findings with `SQL` (notebook)](https://github.com/wacsvn/hiring-market-pulse/blob/main/analysis/hiring_market_findings.ipynb)
-</Callout>
+<p className="link-row">[Live dashboard](https://hiring-market-pulse.streamlit.app/) · [Data docs](https://wacsvn.github.io/hiring-market-pulse/) · [Code](https://github.com/wacsvn/hiring-market-pulse) · [Notebook](https://github.com/wacsvn/hiring-market-pulse/blob/main/analysis/hiring_market_findings.ipynb)</p>
 
 <h2 id="tldr">Overview</h2>
 
@@ -18,11 +15,7 @@ Hiring Market Pulse is a data product I built that tracks how tech startups are 
 
 It covers over 11,500 listings, alongside job-openings data from the Bureau of Labor Statistics. Every day it pulls in the latest posts and refreshes [the dashboard](https://hiring-market-pulse.streamlit.app/).
 
-Under the hood, it's an end-to-end pipeline. `Python` pulls data from two APIs and validates it with `pydantic` data contracts, then loads it into Databricks.
-
-From there, `dbt` models it using `SQL` into analysis-ready tables, with 52 data quality tests that are themselves mutation-tested.
-
-All of this runs on GitHub Actions for CI/CD, where changes can’t merge and data can’t be published unless all tests have passed. The dashboard is built in `Streamlit` as a web app that is automatically tested with `Playwright`.
+<Stats items="11,500+|posts tracked|#pipeline; Daily|tested refresh|#refresh; 52|data tests|#model; 11/11|injected faults caught|#mutation; 98%|work-mode accuracy|#accuracy" />
 
 <Flow caption="How data moves through the pipeline. Click a box to jump to its phase." rows='[
   [{"label": "HN Algolia API", "href": "#pipeline", "step": 1}, {"label": "BLS JOLTS API", "href": "#pipeline", "step": 1}],
@@ -141,7 +134,7 @@ Every model and column has a description. `dbt` turns all of it into this docs s
 
 There are 52 data tests that run on every build, using `dbt`'s built-in tests and the `dbt_utils` package. They check that IDs are unique and every post belongs to a real thread. They also check for invalid and missing values.
 
-<p className="caption">Mutation check output from CI (5 of the 11 corruptions shown). More in the <a href="https://github.com/wacsvn/hiring-market-pulse/blob/main/docs/case-studies/tests-that-couldnt-fail.md">case study</a>.</p>
+<p className="caption" id="mutation">Mutation check output from CI (5 of the 11 corruptions shown). More in the <a href="https://github.com/wacsvn/hiring-market-pulse/blob/main/docs/case-studies/tests-that-couldnt-fail.md">case study</a>.</p>
 
 ```text
 CAUGHT  duplicate post              -> source_unique_raw_hn_posts_post_id [fail]
@@ -168,7 +161,7 @@ They also check that values come from the expected list, that a minimum salary i
 
 One of them is deliberately a warning rather than a failure. It flags months where Hacker News and the official data move in very different directions. That's worth a person taking a look, but it doesn't necessarily mean anything is wrong.
 
-<p className="caption">Extractor accuracy, as shown on the dashboard's Data quality tab</p>
+<p className="caption" id="accuracy">Extractor accuracy, as shown on the dashboard's Data quality tab</p>
 
 ![Dashboard Data quality tab: extractor accuracy table](/images/hmp/dash-accuracy.png)
 
@@ -209,7 +202,7 @@ Every change goes through a pull request, and the main branch is protected, so n
 
 The lint and type checks also run on my machine through `pre-commit` hooks before I commit, to avoid any CI surprises.
 
-<p className="caption">Daily refresh runs in GitHub Actions, including the two failures</p>
+<p className="caption" id="refresh">Daily refresh runs in GitHub Actions, including the two failures</p>
 
 ![GitHub Actions: Refresh data workflow runs, with the workflow list in the sidebar](/images/hmp/gh-refresh-runs.png)
 
@@ -253,9 +246,9 @@ That setup got a real test in its first few days, when the daily refresh failed 
 
 The dashboard itself is built with `Streamlit` and `Plotly` and hosted on Streamlit Community Cloud. It’s designed to present the data in a digestible way that abstracts all of the engineering behind it.
 
-<p className="caption">Dragging the date slider: the KPI cards follow the range</p>
+<p className="caption">Clicking through the dashboard tabs</p>
 
-<Clip src="/videos/hmp-date-slider.webm" poster="/images/hmp/dash-hero.png" label="Dragging the date slider updates the KPI cards" />
+<Clip src="/videos/hmp-tabs.webm" poster="/images/hmp/dash-hero.png" label="Clicking through the dashboard tabs" />
 
 Users can drag the date slider to see KPIs update, and browse through tabs for different insights.
 
