@@ -109,9 +109,9 @@ Job posts are unstructured text, so the next step is pulling structure out of th
 
 All of that gets written into `Parquet` files using `pandas`.
 
-{/* Databricks Catalog Explorer screenshot goes here: save it as public/images/hmp/databricks-catalog.png
-and replace this comment with a markdown image pointing at /images/hmp/databricks-catalog.png,
-followed by a caption line like the others */}
+![Databricks Catalog Explorer: the pulse_raw schema with its five raw tables and the landing volume](/images/databricks-catalog.png)
+
+<p className="caption">Databricks Catalog Explorer: the raw Delta tables and the <code>landing</code> volume in Unity Catalog</p>
 
 Those files are uploaded to a volume in Databricks and loaded into Delta tables in Unity Catalog. Each load replaces the table instead of adding to it, so running the same day twice won't create duplicates.
 
@@ -205,7 +205,7 @@ The fixes it prompted took work-mode accuracy from 91% to 98% and seniority from
 
 Everything mentioned thus far is automated with GitHub Actions.
 
-![Branch protection on main: four status checks required before merging](/images/hmp/branch-protection.png)
+![Branch protection on main: four status checks required before merging](/images/branch-protection-page.png)
 
 <p className="caption">Branch protection on main: the four checks a change needs before it can merge</p>
 
