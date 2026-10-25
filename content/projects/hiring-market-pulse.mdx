@@ -35,7 +35,7 @@ All of this runs on GitHub Actions for CI/CD, where changes can’t merge and da
   [{"label": "Streamlit dashboard", "href": "#dashboard", "step": 4}, {"spacer": true}]
 ]' />
 
-Here's how it's built, in five phases: the pipeline, modeling and testing, CI/CD, the dashboard itself, and the analysis.
+Here's how it's built, in five phases:
 
 | Phase | Tools |
 |---|---|
@@ -52,24 +52,6 @@ Here's how it's built, in five phases: the pipeline, modeling and testing, CI/CD
 The pipeline is written in `Python` and runs once a day as a batch job.
 
 It starts by calling two public APIs. One is the Algolia search API, which sits in front of YC’s Hacker News forum. The other is the BLS API for a survey called JOLTS, which is an official count of job openings. The requests go through `httpx`. If a service is busy or briefly down, the pipeline waits and tries again a few times before giving up.
-
-<p className="caption">Data contract for a raw post (<code>pydantic</code>), from <code>src/pulse/contracts.py</code></p>
-
-```python
-class RawPost(_Strict):
-    post_id: int
-    thread_id: int
-    thread_month: date
-    posted_at: datetime
-    text_html: str = Field(min_length=1)
-
-    @field_validator("posted_at")
-    @classmethod
-    def _not_in_future(cls, v: datetime) -> datetime:
-        if v > datetime.now(UTC):
-            raise ValueError("posted_at is in the future")
-        return v
-```
 
 Before anything is saved, each record is checked against a data contract written with `pydantic`. The contract spells out what a valid record looks like, so mistakes like missing IDs or negative numbers get caught. Records that *fail* go into a quarantine table along with the reason they were rejected.
 
@@ -112,6 +94,24 @@ Those files are uploaded to a volume in Databricks and loaded into Delta tables 
 <details>
 <summary>More detail</summary>
 
+<p className="caption">Data contract for a raw post (<code>pydantic</code>), from <code>src/pulse/contracts.py</code></p>
+
+```python
+class RawPost(_Strict):
+    post_id: int
+    thread_id: int
+    thread_month: date
+    posted_at: datetime
+    text_html: str = Field(min_length=1)
+
+    @field_validator("posted_at")
+    @classmethod
+    def _not_in_future(cls, v: datetime) -> datetime:
+        if v > datetime.now(UTC):
+            raise ValueError("posted_at is in the future")
+        return v
+```
+
 If the source ever adds or renames a field, the data that doesn't fit is kept in its own column rather than dropped, which makes that kind of change easy to spot.
 
 </details>
@@ -135,17 +135,9 @@ Once the raw data is in the warehouse, I model it with `dbt`, using `SQL`.
 
 The first layer is staging, where the raw tables get cleaned up and standardized.
 
-These evolve into data marts. Data marts are tables that the dashboard and analysis actually read from. There's one with a row for every post and one that rolls everything up by month. Others break the data down by role, technology and salary, and the last one lines Hacker News up against the government numbers.
+These feed the data marts: the tables that the dashboard and analysis actually read from. There's one with a row for every post and one that rolls everything up by month. Others break the data down by role, technology and salary, and the last one lines Hacker News up against the government numbers.
 
 Every model and column has a description. `dbt` turns all of it into this docs site, so anyone can look up what a field means and where it comes from.
-
-<p className="caption"><code>dbt build</code> output from a daily refresh run (52 tests + 11 models = 63 nodes)</p>
-
-```text
-Finished running 11 table models, 52 data tests in 0 hours 0 minutes and 51.77 seconds (51.77s).
-Completed with 1 warning:
-Done. PASS=62 WARN=1 ERROR=0 SKIP=0 NO-OP=0 REUSED=0 TOTAL=63
-```
 
 There are 52 data tests that run on every build, using `dbt`'s built-in tests and the `dbt_utils` package. They check that IDs are unique and every post belongs to a real thread. They also check for invalid and missing values.
 
@@ -217,18 +209,9 @@ Every change goes through a pull request, and the main branch is protected, so n
 
 The lint and type checks also run on my machine through `pre-commit` hooks before I commit, to avoid any CI surprises.
 
-<Slides name="daily refresh">
-<Slide caption="The daily refresh and its publish gate">
-
-![Daily refresh flow: publish if all tests pass, otherwise open an issue and keep the last good data](/images/hmp/diagram-daily.png)
-
-</Slide>
-<Slide caption="Daily refresh runs in GitHub Actions, including the two failures">
+<p className="caption">Daily refresh runs in GitHub Actions, including the two failures</p>
 
 ![GitHub Actions: Refresh data workflow runs, with the workflow list in the sidebar](/images/hmp/gh-refresh-runs.png)
-
-</Slide>
-</Slides>
 
 Getting new data out is automated too. A scheduled workflow reruns the whole pipeline every day and publishes only if every test passes.
 
@@ -267,10 +250,6 @@ That setup got a real test in its first few days, when the daily refresh failed 
 </details>
 
 <h2 id="dashboard">4 · Dashboard and tests</h2>
-
-<p className="caption">Work-mode chart on the dashboard</p>
-
-![Dashboard work-mode chart: remote, hybrid and onsite shares by month](/images/hmp/dash-work-mode.png)
 
 The dashboard itself is built with `Streamlit` and `Plotly` and hosted on Streamlit Community Cloud. It’s designed to present the data in a digestible way that abstracts all of the engineering behind it.
 
