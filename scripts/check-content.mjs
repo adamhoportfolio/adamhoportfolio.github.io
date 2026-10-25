@@ -35,8 +35,9 @@ for (const file of walk(dir)) {
       problems.push(`${rel}: image not found: public${img}`);
   // local video files must exist and stay under GitHub's 100 MB file limit
   const vids = [data.video, data.heroClip, ...[...raw.matchAll(/src="(\/videos\/[^"]+)"/g)].map((m) => m[1])].filter(Boolean);
-  for (const vid of vids) {
-    if (!vid.startsWith("/")) continue;
+  for (const v of vids) {
+    if (!v.startsWith("/")) continue;
+    const vid = v.split("#")[0]; // "#t=5.6" start offsets
     const f = path.join(root, "public", vid);
     if (!fs.existsSync(f)) problems.push(`${rel}: video not found: public${vid}`);
     else if (fs.statSync(f).size > 90 * 1024 * 1024) problems.push(`${rel}: video over 90 MB (GitHub rejects >100 MB): public${vid}`);

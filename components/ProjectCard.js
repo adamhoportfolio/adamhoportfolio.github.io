@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { formatDate } from "@/lib/posts";
+import Clip from "./Clip";
 
 export default function ProjectCard({ p, position }) {
   const href = p.external || `/blog-posts/${p.slug}/`;
@@ -20,7 +21,13 @@ export default function ProjectCard({ p, position }) {
   return (
     <article className="card">
       <Anchor href={href} {...linkProps} className="card-image" aria-hidden="true" tabIndex={-1} {...trackProps("image")}>
-        {p.image ? <img src={p.image} alt="" loading="lazy" /> : <span className="card-noimg" />}
+        {p.heroClip ? (
+          <Clip className="card-clip" src={p.heroClip} poster={p.image} label="" />
+        ) : p.image ? (
+          <img src={p.image} alt="" loading="lazy" />
+        ) : (
+          <span className="card-noimg" />
+        )}
       </Anchor>
       <h2 className="card-title">{p.title}</h2>
       <p className="byline">
