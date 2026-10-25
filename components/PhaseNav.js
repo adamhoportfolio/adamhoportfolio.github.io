@@ -2,8 +2,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { track } from "@/lib/analytics";
 
-// Sticky bar for posts written in phases: highlights the phase being read, jumps to
-// a phase on click, and opens or closes every "More detail" block at once.
+// Sticky bar for posts written in phases: a back-to-top button, the phase being read
+// (click one to jump to it), and a switch that opens or closes every "More detail" block.
 // Use in .mdx posts:  <PhaseNav phases="pipeline:Pipeline, model:Model & test, ..." />
 // (a string, because next-mdx-remote blocks JavaScript expressions in MDX props).
 // Each id must be the id of a heading in the post.
@@ -49,6 +49,10 @@ export default function PhaseNav({ phases: spec }) {
 
   return (
     <nav className="phase-nav" aria-label="Phases">
+      <button type="button" className="phase-top" aria-label="Back to top"
+        onClick={() => { window.scrollTo({ top: 0, behavior: "smooth" }); track("back_to_top", { page_slug: window.location.pathname }); }}>
+        ↑
+      </button>
       <ol ref={list}>
         {phases.map((p, k) => (
           <li key={p.id}>
