@@ -18,16 +18,6 @@ Hiring Market Pulse is a data product I built that tracks how tech startups are 
 
 It covers over 11,500 listings, alongside job-openings data from the Bureau of Labor Statistics. Every day it pulls in the latest posts and refreshes [the dashboard](https://hiring-market-pulse.streamlit.app/).
 
-| Area | Tools |
-|---|---|
-| **Pipeline** | `Python` · `httpx` · `pydantic` · `pandas` · `Parquet` |
-| **Warehouse** | Databricks (Unity Catalog, Delta) · `SQL` |
-| **Modeling** | `dbt` · 52 data tests · mutation testing · accuracy audit |
-| **CI/CD** | GitHub Actions · branch protection · gated publishing |
-| **App & tests** | `Streamlit` · `Plotly` · `Playwright` · `pytest` |
-| **Analysis** | `Jupyter` · `DuckDB` |
-| **AI-assisted** | Claude Code |
-
 Under the hood, it's an end-to-end pipeline. `Python` pulls data from two APIs and validates it with `pydantic` data contracts, then loads it into Databricks.
 
 From there, `dbt` models it using `SQL` into analysis-ready tables, with 52 data quality tests that are themselves mutation-tested.
@@ -63,6 +53,8 @@ The pipeline is written in `Python` and runs once a day as a batch job.
 
 It starts by calling two public APIs. One is the Algolia search API, which sits in front of YC’s Hacker News forum. The other is the BLS API for a survey called JOLTS, which is an official count of job openings. The requests go through `httpx`. If a service is busy or briefly down, the pipeline waits and tries again a few times before giving up.
 
+<p className="caption">Data contract for a raw post (<code>pydantic</code>), from <code>src/pulse/contracts.py</code></p>
+
 ```python
 class RawPost(_Strict):
     post_id: int
@@ -79,22 +71,23 @@ class RawPost(_Strict):
         return v
 ```
 
-<p className="caption">Data contract for a raw post (<code>pydantic</code>), from <code>src/pulse/contracts.py</code></p>
-
 Before anything is saved, each record is checked against a data contract written with `pydantic`. The contract spells out what a valid record looks like, so mistakes like missing IDs or negative numbers get caught. Records that *fail* go into a quarantine table along with the reason they were rejected.
 
 <Toggle name="extractor">
 <Pane label="Raw listing">
 
+<p className="caption">Example of raw listing text</p>
+
 ```text
-23andMe | Software Engineer II, Compute Pipelines | Palo Alto, CA | Hybrid or Remote (US) | Full-time | Bay Area Rate: $150k–$190k
+23andMe | Software Engineer II, Compute Pipelines | Palo Alto, CA |
+Hybrid or Remote (US) | Full-time | Bay Area Rate: $150k–$190k
 ...Deep hands-on Python... Infrastructure as code (Terraform on AWS, Docker)...
 ```
 
-<p className="caption">Example of raw listing text</p>
-
 </Pane>
 <Pane label="Extracted fields">
+
+<p className="caption">The fields the extractor pulled out of that listing</p>
 
 ```python
 {'company': '23andMe', 'work_mode': 'remote', 'role_families': ['engineering'],
@@ -103,8 +96,6 @@ Before anything is saved, each record is checked against a data contract written
  'tech': ['aws', 'python', 'terraform']}
 ```
 
-<p className="caption">The fields the extractor pulled out of that listing</p>
-
 </Pane>
 </Toggle>
 
@@ -112,9 +103,9 @@ Job posts are unstructured text, so the next step is pulling structure out of ea
 
 All of that gets written into `Parquet` files using `pandas`.
 
-![Databricks Catalog Explorer: the pulse_raw schema with its five raw tables and the landing volume](/images/databricks-catalog.png)
-
 <p className="caption">Databricks Catalog Explorer: the raw Delta tables and the <code>landing</code> volume in Unity Catalog</p>
+
+![Databricks Catalog Explorer: the pulse_raw schema with its five raw tables and the landing volume](/images/databricks-catalog.png)
 
 Those files are uploaded to a volume in Databricks and loaded into Delta tables in Unity Catalog. Each load replaces the table instead of adding to it, so running the same day twice won't create duplicates.
 
@@ -148,15 +139,17 @@ These evolve into data marts. Data marts are tables that the dashboard and analy
 
 Every model and column has a description. `dbt` turns all of it into this docs site, so anyone can look up what a field means and where it comes from.
 
+<p className="caption"><code>dbt build</code> output from a daily refresh run (52 tests + 11 models = 63 nodes)</p>
+
 ```text
 Finished running 11 table models, 52 data tests in 0 hours 0 minutes and 51.77 seconds (51.77s).
 Completed with 1 warning:
 Done. PASS=62 WARN=1 ERROR=0 SKIP=0 NO-OP=0 REUSED=0 TOTAL=63
 ```
 
-<p className="caption"><code>dbt build</code> output from a daily refresh run (52 tests + 11 models = 63 nodes)</p>
-
 There are 52 data tests that run on every build, using `dbt`'s built-in tests and the `dbt_utils` package. They check that IDs are unique and every post belongs to a real thread. They also check for invalid and missing values.
+
+<p className="caption">Mutation check output from CI (5 of the 11 corruptions shown). More in the <a href="https://github.com/wacsvn/hiring-market-pulse/blob/main/docs/case-studies/tests-that-couldnt-fail.md">case study</a>.</p>
 
 ```text
 CAUGHT  duplicate post              -> source_unique_raw_hn_posts_post_id [fail]
@@ -168,8 +161,6 @@ CAUGHT  quarantine spike            -> assert_quarantine_rate_below_5pct [fail]
 11/11 mutations caught
 ```
 
-<p className="caption">Mutation check output from CI (5 of the 11 corruptions shown). More in the <a href="https://github.com/wacsvn/hiring-market-pulse/blob/main/docs/case-studies/tests-that-couldnt-fail.md">case study</a>.</p>
-
 These tests are also *themselves* tested. A mutation check copies the data, breaks it in eleven different ways and confirms the right test fails each time. This is how a real gap was found and closed: a month with no posts at all could slip past the check that was supposed to catch missing months.
 
 To test whether the extractor read a post correctly, I put together 50 sample posts with answers drafted by AI and spot-checked by hand (20 verified, 99% agreement), and scored the extractor against them with `pytest`.
@@ -179,15 +170,15 @@ To test whether the extractor read a post correctly, I put together 50 sample po
 
 They also check that values come from the expected list, that a minimum salary is never above the maximum, that no months are missing and that the data is fresh.
 
-![dbt docs page for the warn-level divergence test](/images/hmp/dbt-warn-test.png)
-
 <p className="caption">The one warn-level test: HN and official data diverging</p>
+
+![dbt docs page for the warn-level divergence test](/images/hmp/dbt-warn-test.png)
 
 One of them is deliberately a warning rather than a failure. It flags months where Hacker News and the official data move in very different directions. That's worth a person taking a look, but it doesn't necessarily mean anything is wrong.
 
-![Dashboard Data quality tab: extractor accuracy table](/images/hmp/dash-accuracy.png)
-
 <p className="caption">Extractor accuracy, as shown on the dashboard's Data quality tab</p>
+
+![Dashboard Data quality tab: extractor accuracy table](/images/hmp/dash-accuracy.png)
 
 Work arrangement and salary detection both came out at 98 percent.
 
@@ -244,16 +235,16 @@ Getting new data out is automated too. A scheduled workflow reruns the whole pip
 <Toggle name="publish gate">
 <Pane label="All tests pass">
 
-![GitHub Release data-latest with the published mart Parquet files](/images/hmp/gh-release.png)
-
 <p className="caption">The published marts, as <code>Parquet</code> files on a GitHub Release</p>
+
+![GitHub Release data-latest with the published mart Parquet files](/images/hmp/gh-release.png)
 
 </Pane>
 <Pane label="A test fails">
 
-![Auto-opened GitHub issue: Data refresh failed, listing the failed dbt nodes](/images/hmp/gh-failure-issue.png)
-
 <p className="caption">Issue opened automatically by a failed refresh</p>
+
+![Auto-opened GitHub issue: Data refresh failed, listing the failed dbt nodes](/images/hmp/gh-failure-issue.png)
 
 </Pane>
 </Toggle>
@@ -267,9 +258,9 @@ Other workflows republish the `dbt` docs to GitHub Pages and check the live dash
 <details>
 <summary>More detail</summary>
 
-![Incident report for the 2026-10-22 refresh failures](/images/hmp/gh-incident.png)
-
 <p className="caption"><a href="https://github.com/wacsvn/hiring-market-pulse/blob/main/docs/incidents/2026-10-22-refresh-failures.md">Incident report</a> for the two refresh failures</p>
+
+![Incident report for the 2026-10-22 refresh failures](/images/hmp/gh-incident.png)
 
 That setup got a real test in its first few days, when the daily refresh failed twice. The first time, I'd hit the table limit on Databricks' free tier. The second time, the government API went down. Both times the gate did its job: nothing bad was published, and an issue opened on its own. I fixed both the same day, added tests so they wouldn't come back, and wrote up an incident report.
 
@@ -277,17 +268,19 @@ That setup got a real test in its first few days, when the daily refresh failed 
 
 <h2 id="dashboard">4 · Dashboard and tests</h2>
 
-![Dashboard work-mode chart: remote, hybrid and onsite shares by month](/images/hmp/dash-work-mode.png)
-
 <p className="caption">Work-mode chart on the dashboard</p>
+
+![Dashboard work-mode chart: remote, hybrid and onsite shares by month](/images/hmp/dash-work-mode.png)
 
 The dashboard itself is built with `Streamlit` and `Plotly` and hosted on Streamlit Community Cloud. It’s designed to present the data in a digestible way that abstracts all of the engineering behind it.
 
-<Clip src="/videos/hmp-date-slider.webm" poster="/images/hmp/dash-hero.png" label="Dragging the date slider updates the KPI cards" />
-
 <p className="caption">Dragging the date slider: the KPI cards follow the range</p>
 
+<Clip src="/videos/hmp-date-slider.webm" poster="/images/hmp/dash-hero.png" label="Dragging the date slider updates the KPI cards" />
+
 Users can drag the date slider to see KPIs update, and browse through tabs for different insights.
+
+<p className="caption"><code>Playwright</code> browser tests from CI (5 of 16 shown)</p>
 
 ```text
 ✓ overview › KPIs follow the start of the date range
@@ -298,8 +291,6 @@ Users can drag the date slider to see KPIs update, and browse through tabs for d
 ...
 16 passed (54.7s)
 ```
-
-<p className="caption"><code>Playwright</code> browser tests from CI (5 of 16 shown)</p>
 
 The web app itself is tested with `Playwright`. There are 16 automated browser tests that run against a frozen copy of the data, so the expected numbers are always known. These check for user experience and bugs, like whether moving the date filter actually changes the cards.
 
@@ -334,12 +325,14 @@ The last phase is the analysis, which I wrote up as a `Jupyter` notebook.
 <Toggle name="notebook">
 <Pane label="Chart">
 
-![Notebook chart: HN posts vs official job openings, indexed to Nov 2023](/images/hmp/notebook-hn-vs-jolts.png)
-
 <p className="caption">HN posts vs official job openings, from the notebook</p>
+
+![Notebook chart: HN posts vs official job openings, indexed to Nov 2023](/images/hmp/notebook-hn-vs-jolts.png)
 
 </Pane>
 <Pane label="SQL behind it">
+
+<p className="caption"><code>DuckDB</code> <code>SQL</code> that produces the chart, run on the published <code>Parquet</code> files</p>
 
 ```python
 bench = sql('''
@@ -350,8 +343,6 @@ bench = sql('''
     order by month
 ''')
 ```
-
-<p className="caption"><code>DuckDB</code> <code>SQL</code> that produces the chart, run on the published <code>Parquet</code> files</p>
 
 </Pane>
 </Toggle>
@@ -364,18 +355,5 @@ Each finding comes with the `SQL` behind it, run with `DuckDB` straight on the p
 For example, over the same period the number of Hacker News posts barely moved, while official job openings fell 35 percent. So this data says a lot about startup hiring but not much about the job market as a whole, and the write-up says that up front.
 
 </details>
-
-## Question
-
-What do three years of startup hiring posts say about remote work, pay transparency, and in-demand skills? And how can a reader know the numbers are right?
-
-## Findings (Nov 2023 to Sep 2026)
-
-The data covers companies that post in Hacker News' monthly "Who is hiring?" thread: mostly startups and engineering teams in U.S. tech hubs, so read the findings as a view of that corner of the market.
-
-- Posts listing a salary rose from 13% to 31%
-- Remote-friendly posts fell from 67% to 55%; onsite-only rose from 15% to 25%
-- LLM/GenAI mentions doubled, from 8% to 16% of posts
-- HN post volume fell 6% while official Information-sector openings fell 35%, so HN is not a stand-in for the broader market
 
 <p className="link-row">[Live dashboard](https://hiring-market-pulse.streamlit.app/) · [Data docs](https://wacsvn.github.io/hiring-market-pulse/) · [Code](https://github.com/wacsvn/hiring-market-pulse) · [Notebook](https://github.com/wacsvn/hiring-market-pulse/blob/main/analysis/hiring_market_findings.ipynb)</p>

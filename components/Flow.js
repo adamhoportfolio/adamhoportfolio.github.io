@@ -11,6 +11,7 @@ export default function Flow({ rows: json, caption }) {
   const rows = typeof json === "string" ? JSON.parse(json) : json;
   return (
     <figure className="flow">
+      {caption ? <figcaption className="caption">{caption}</figcaption> : null}
       {rows.map((row, r) => (
         <Fragment key={r}>
           {r > 0 ? (
@@ -36,7 +37,6 @@ export default function Flow({ rows: json, caption }) {
           </div>
         </Fragment>
       ))}
-      {caption ? <figcaption className="caption">{caption}</figcaption> : null}
     </figure>
   );
 }

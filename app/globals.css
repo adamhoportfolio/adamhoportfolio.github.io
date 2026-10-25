@@ -86,7 +86,8 @@ a { color: inherit; }
 .prose ul, .prose ol { padding-left: 1.3em; margin: 0 0 1.2em; }
 .prose li { margin: .3em 0; }
 .prose img { margin: 1.6em auto; }
-.prose .caption { margin: -1.6em 0 1.8em; color: var(--muted); font-size: 13px; text-align: center; }
+.prose .caption { margin: 1.8em 0 .6em; color: var(--muted); font-size: 13px; text-align: center; }
+.prose .caption + p > img:first-child, .prose .caption + .clip { margin-top: 0; }
 .prose .clip { display: block; width: 100%; height: auto; margin: 1.6em 0 2.2em; border-radius: 6px; background: #000; }
 .prose hr { border: 0; border-top: 1px solid var(--line); margin: 2.4em 0; }
 .prose code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .9em; background: var(--panel); padding: .1em .35em; border-radius: 3px; }
@@ -157,7 +158,7 @@ a.flow-box:hover { background: #2e2d37; color: var(--text); }
 .flow-sub { color: var(--muted); font-size: 12.5px; }
 .flow-via { color: var(--muted); font-size: 12px; font-style: italic; }
 .flow-arrow { text-align: center; color: var(--muted); line-height: 1.6; }
-.flow .caption { margin: 12px 0 0; }
+.flow .caption { margin: 0 0 14px; }
 
 .callout { background: var(--panel); border-left: 4px solid var(--link); padding: 14px 18px; margin: 0 0 2em; border-radius: 0 4px 4px 0; }
 .callout strong { display: block; margin-bottom: 4px; color: var(--text); }
@@ -200,4 +201,4 @@ a.flow-box:hover { background: #2e2d37; color: var(--text); }
 }
 .slide p, .toggle-pane p { margin: 0; }
 .toggle-pane img { margin: 0 auto; }
-.toggle-pane .caption { margin: 10px 0 0; }
+.toggle-pane .caption { margin: 0 0 8px; }
