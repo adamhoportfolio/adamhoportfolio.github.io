@@ -34,9 +34,16 @@ From there, `dbt` models it using `SQL` into analysis-ready tables, with 52 data
 
 All of this runs on GitHub Actions for CI/CD, where changes can’t merge and data can’t be published unless all tests have passed. The dashboard is built in `Streamlit` as a web app that is automatically tested with `Playwright`.
 
-<img className="diagram-narrow" src="/images/hmp/diagram-data-flow.png" alt="Data flow: HN and BLS APIs, data contracts, rules extractor, Databricks, dbt models, 52 data tests, then publish or open an issue" />
-
-<p className="caption">How data moves through the pipeline</p>
+<Flow caption="How data moves through the pipeline. Click a box to jump to its phase." rows='[
+  [{"label": "HN Algolia API", "href": "#pipeline", "step": 1}, {"label": "BLS JOLTS API", "href": "#pipeline", "step": 1}],
+  [{"label": "Ingest + data contracts", "sub": "pydantic, quarantine", "href": "#pipeline", "step": 1}],
+  [{"label": "Rules extractor", "sub": "regex", "href": "#pipeline", "step": 1}],
+  [{"label": "Databricks", "sub": "Unity Catalog volume → Delta", "href": "#pipeline", "step": 1}],
+  [{"label": "dbt models", "sub": "staging → marts", "href": "#model", "step": 2}],
+  [{"label": "52 data tests pass?", "href": "#model", "step": 2}],
+  [{"via": "yes", "label": "Publish marts", "sub": "GitHub release", "href": "#cicd", "step": 3}, {"via": "no", "label": "Open GitHub issue", "sub": "keep last good data", "href": "#cicd", "step": 3}],
+  [{"label": "Streamlit dashboard", "href": "#dashboard", "step": 4}, {"spacer": true}]
+]' />
 
 Here's how it's built, in five phases: the pipeline, modeling and testing, CI/CD, the dashboard itself, and the analysis.
 
@@ -47,6 +54,8 @@ Here's how it's built, in five phases: the pipeline, modeling and testing, CI/CD
 | [3 · CI/CD and automation](#cicd) | GitHub Actions · `ruff` · `mypy` · `pre-commit` · GitHub Releases · GitHub Pages |
 | [4 · Dashboard and tests](#dashboard) | `Streamlit` · `Plotly` · `Playwright` |
 | [5 · Analysis](#analysis) | `Jupyter` · `DuckDB` · `matplotlib` |
+
+<PhaseNav phases="pipeline:Pipeline, model:Model & test, cicd:CI/CD, dashboard:Dashboard, analysis:Analysis" />
 
 <h2 id="pipeline">1 · Data pipeline</h2>
 
@@ -74,12 +83,18 @@ class RawPost(_Strict):
 
 Before anything is saved, each record is checked against a data contract written with `pydantic`. The contract spells out what a valid record looks like, so mistakes like missing IDs or negative numbers get caught. Records that *fail* go into a quarantine table along with the reason they were rejected.
 
+<Toggle name="extractor">
+<Pane label="Raw listing">
+
 ```text
 23andMe | Software Engineer II, Compute Pipelines | Palo Alto, CA | Hybrid or Remote (US) | Full-time | Bay Area Rate: $150k–$190k
 ...Deep hands-on Python... Infrastructure as code (Terraform on AWS, Docker)...
 ```
 
 <p className="caption">Example of raw listing text</p>
+
+</Pane>
+<Pane label="Extracted fields">
 
 ```python
 {'company': '23andMe', 'work_mode': 'remote', 'role_families': ['engineering'],
@@ -89,6 +104,9 @@ Before anything is saved, each record is checked against a data contract written
 ```
 
 <p className="caption">The fields the extractor pulled out of that listing</p>
+
+</Pane>
+</Toggle>
 
 Job posts are unstructured text, so the next step is pulling structure out of each one. A rules-based extractor, using `regex`, reads each post. It works out whether the job is remote, hybrid or onsite, plus the salary range, role, seniority, location and tech stack.
 
@@ -109,19 +127,24 @@ If the source ever adds or renames a field, the data that doesn't fit is kept in
 
 <h2 id="model">2 · Model and test the data</h2>
 
+<Slides name="dbt docs">
+<Slide caption="`dbt` lineage: raw sources (green) → staging → marts, with the custom tests">
+
 ![dbt lineage graph: raw sources, staging models, fct_postings, and the marts](/images/hmp/dbt-lineage.png)
 
-<p className="caption"><code>dbt</code> lineage: raw sources (green) → staging → marts, with the custom tests</p>
+</Slide>
+<Slide caption="`dbt` docs page for a mart: description, columns and tests">
+
+![dbt docs page for mart_monthly_summary with column descriptions and tests](/images/hmp/dbt-model.png)
+
+</Slide>
+</Slides>
 
 Once the raw data is in the warehouse, I model it with `dbt`, using `SQL`.
 
 The first layer is staging, where the raw tables get cleaned up and standardized.
 
 These evolve into data marts. Data marts are tables that the dashboard and analysis actually read from. There's one with a row for every post and one that rolls everything up by month. Others break the data down by role, technology and salary, and the last one lines Hacker News up against the government numbers.
-
-![dbt docs page for mart_monthly_summary with column descriptions and tests](/images/hmp/dbt-model.png)
-
-<p className="caption"><code>dbt</code> docs page for a mart: description, columns and tests</p>
 
 Every model and column has a description. `dbt` turns all of it into this docs site, so anyone can look up what a field means and where it comes from.
 
@@ -184,39 +207,58 @@ The fixes it prompted took work-mode accuracy from 91% to 98% and seniority from
 
 <h2 id="cicd">3 · CI/CD and automation</h2>
 
+Everything mentioned thus far is automated with GitHub Actions.
+
+<Slides name="pull request gate">
+<Slide caption="What every pull request goes through">
+
 ![Pull request flow: required checks, then merge to main, then the app and docs redeploy](/images/hmp/diagram-pr-gate.png)
 
-<p className="caption">What every pull request goes through</p>
-
-Everything mentioned thus far is automated with GitHub Actions.
+</Slide>
+<Slide caption="Branch protection on main: the four checks a change needs before it can merge">
 
 ![Branch protection on main: four status checks required before merging](/images/branch-protection-page.png)
 
-<p className="caption">Branch protection on main: the four checks a change needs before it can merge</p>
+</Slide>
+</Slides>
 
 Every change goes through a pull request, and the main branch is protected, so nothing can merge until the checks pass. They cover linting with `ruff`, type checking with `mypy` and 90 unit tests using `pytest` and `Hypothesis`. There's also a full `dbt` build with every data test, against a Databricks schema set aside for CI, and browser tests for the dashboard ([shown below](#dashboard)).
 
 The lint and type checks also run on my machine through `pre-commit` hooks before I commit, to avoid any CI surprises.
 
+<Slides name="daily refresh">
+<Slide caption="The daily refresh and its publish gate">
+
 ![Daily refresh flow: publish if all tests pass, otherwise open an issue and keep the last good data](/images/hmp/diagram-daily.png)
 
-<p className="caption">The daily refresh and its publish gate</p>
+</Slide>
+<Slide caption="Daily refresh runs in GitHub Actions, including the two failures">
 
 ![GitHub Actions: Refresh data workflow runs, with the workflow list in the sidebar](/images/hmp/gh-refresh-runs.png)
 
-<p className="caption">Daily refresh runs in GitHub Actions, including the two failures</p>
+</Slide>
+</Slides>
 
 Getting new data out is automated too. A scheduled workflow reruns the whole pipeline every day and publishes only if every test passes.
+
+<Toggle name="publish gate">
+<Pane label="All tests pass">
 
 ![GitHub Release data-latest with the published mart Parquet files](/images/hmp/gh-release.png)
 
 <p className="caption">The published marts, as <code>Parquet</code> files on a GitHub Release</p>
 
-Publishing means uploading the finished marts as files to a GitHub Release. The dashboard reads from that release instead of querying Databricks directly. That keeps the app fast and free to run, and it means the dashboard only ever sees data that has already passed the tests.
+</Pane>
+<Pane label="A test fails">
 
 ![Auto-opened GitHub issue: Data refresh failed, listing the failed dbt nodes](/images/hmp/gh-failure-issue.png)
 
 <p className="caption">Issue opened automatically by a failed refresh</p>
+
+</Pane>
+</Toggle>
+
+Publishing means uploading the finished marts as files to a GitHub Release. The dashboard reads from that release instead of querying Databricks directly. That keeps the app fast and free to run, and it means the dashboard only ever sees data that has already passed the tests.
 
 If something fails, nothing gets published and the dashboard keeps showing the last good data. A GitHub issue opens automatically with the details.
 
@@ -268,13 +310,18 @@ A separate smoke test opens the real site on a schedule to make sure it loads an
 
 The headline numbers follow whatever date range you pick, and they show both where things started and where they ended up.
 
+<Slides name="dashboard details">
+<Slide caption="Every chart has its table one click away">
+
 ![Dashboard chart with its "Show data" table expanded](/images/hmp/dash-show-data.png)
 
-<p className="caption">Every chart has its table one click away</p>
+</Slide>
+<Slide caption="Salary bands, with small groups hidden by default">
 
 ![Salaries tab: salary bands, with small groups hidden until the reader opts in](/images/hmp/dash-salary-bands.png)
 
-<p className="caption">Salary bands, with small groups hidden by default</p>
+</Slide>
+</Slides>
 
 Months with too few posts are flagged, and every chart has its table one click away. The colors are chosen to work for colorblind viewers.
 
@@ -283,6 +330,16 @@ Months with too few posts are flagged, and every chart has its table one click a
 <h2 id="analysis">5 · Analysis</h2>
 
 The last phase is the analysis, which I wrote up as a `Jupyter` notebook.
+
+<Toggle name="notebook">
+<Pane label="Chart">
+
+![Notebook chart: HN posts vs official job openings, indexed to Nov 2023](/images/hmp/notebook-hn-vs-jolts.png)
+
+<p className="caption">HN posts vs official job openings, from the notebook</p>
+
+</Pane>
+<Pane label="SQL behind it">
 
 ```python
 bench = sql('''
@@ -294,11 +351,10 @@ bench = sql('''
 ''')
 ```
 
-<p className="caption"><code>DuckDB</code> <code>SQL</code> from the notebook, run on the published <code>Parquet</code> files</p>
+<p className="caption"><code>DuckDB</code> <code>SQL</code> that produces the chart, run on the published <code>Parquet</code> files</p>
 
-![Notebook chart: HN posts vs official job openings, indexed to Nov 2023](/images/hmp/notebook-hn-vs-jolts.png)
-
-<p className="caption">The chart that query produces</p>
+</Pane>
+</Toggle>
 
 Each finding comes with the `SQL` behind it, run with `DuckDB` straight on the published files. It also has a `matplotlib` chart, along with Markdown for plain-English explanations.
 
