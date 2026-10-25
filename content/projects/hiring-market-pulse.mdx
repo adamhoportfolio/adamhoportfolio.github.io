@@ -2,49 +2,330 @@
 title: "Hiring Market Pulse - Tested Data Pipeline on Databricks + dbt"
 date: "2026-10-22"
 category: "Data Pipeline & Quality"
-summary: "A daily pipeline that turns 11,500+ Hacker News job posts and BLS job-openings data into a dashboard, published only after 52 dbt data tests pass. The tests are themselves tested, and the text extraction is scored against hand-checked posts."
+summary: "A daily pipeline that turns 11,500+ Hacker News job posts and BLS job-openings data into a dashboard, published only after 52 dbt data tests pass. The tests are themselves tested, and the text extraction is scored against labeled posts, spot-checked by hand."
 image: "/images/hiring-market-pulse-thumb.jpg"
+heroClip: "/videos/hmp-date-slider.webm"
+liveRelease: "wacsvn/hiring-market-pulse@data-latest"
 ---
-<Callout title="Check out the resources for this project here">
-- [Live dashboard (Streamlit)](https://hiring-market-pulse.streamlit.app/)
-- [Data model documentation (dbt docs: lineage, columns, tests)](https://wacsvn.github.io/hiring-market-pulse/)
-- [Code, tests, and CI (GitHub)](https://github.com/wacsvn/hiring-market-pulse)
-- [Analysis memo: findings with SQL (notebook)](https://github.com/wacsvn/hiring-market-pulse/blob/main/analysis/hiring_market_findings.ipynb)
-- [Case study: tests that couldn't fail](https://github.com/wacsvn/hiring-market-pulse/blob/main/docs/case-studies/tests-that-couldnt-fail.md)
-- [Incident report: two production failures and the fixes](https://github.com/wacsvn/hiring-market-pulse/blob/main/docs/incidents/2026-10-22-refresh-failures.md)
+<p className="link-row">[Live dashboard](https://hiring-market-pulse.streamlit.app/) · [Data docs](https://wacsvn.github.io/hiring-market-pulse/) · [Code](https://github.com/wacsvn/hiring-market-pulse) · [Notebook](https://github.com/wacsvn/hiring-market-pulse/blob/main/analysis/hiring_market_findings.ipynb)</p>
 
-The data covers companies that post in Hacker News' monthly "Who is hiring?" thread: mostly startups and engineering teams in U.S. tech hubs, so read the findings as a view of that corner of the market.
-</Callout>
+<h2 id="tldr">Overview</h2>
 
-## Question
+Hiring Market Pulse is a data product I built that tracks how tech startups are hiring, based on the job posts in Y Combinator’s monthly thread.
 
-What do three years of startup hiring posts say about remote work, pay transparency, and in-demand skills? And how can a reader know the numbers are right?
+It covers over 11,500 listings, alongside job-openings data from the Bureau of Labor Statistics. Every day it pulls in the latest posts and refreshes [the dashboard](https://hiring-market-pulse.streamlit.app/).
 
-## Pipeline Areas
+<Stats items="11,500+|posts tracked|#pipeline; Daily|tested refresh|#refresh; 52|data tests|#model; 11/11|injected faults caught|#mutation; 98%|work-mode accuracy|#accuracy" />
 
-1. Ingestion from the Hacker News and BLS APIs, with data contracts and a quarantine for rejected records
-2. Rules-based extraction of work mode, salary, role, seniority, and tech stack from free text
-3. Load to Databricks (Unity Catalog volume to Delta tables)
-4. dbt staging and mart models with 52 data tests
-5. Gated publishing: the dashboard updates only if every hard test passes; otherwise a GitHub issue opens
-6. Streamlit dashboard with a built-in data-quality panel
-7. dbt docs site with lineage and per-column tests
+<Flow caption="How data moves through the pipeline. Click a box to jump to its phase." rows='[
+  [{"label": "HN Algolia API", "href": "#pipeline", "step": 1}, {"label": "BLS JOLTS API", "href": "#pipeline", "step": 1}],
+  [{"label": "Ingest + data contracts", "sub": "pydantic, quarantine", "href": "#pipeline", "step": 1}],
+  [{"label": "Rules extractor", "sub": "regex", "href": "#pipeline", "step": 1}],
+  [{"label": "Databricks", "sub": "Unity Catalog volume → Delta", "href": "#pipeline", "step": 1}],
+  [{"label": "dbt models", "sub": "staging → marts", "href": "#model", "step": 2}],
+  [{"label": "52 data tests pass?", "href": "#model", "step": 2}],
+  [{"via": "yes", "label": "Publish marts", "sub": "GitHub release", "href": "#cicd", "step": 3}, {"via": "no", "label": "Open GitHub issue", "sub": "keep last good data", "href": "#cicd", "step": 3}],
+  [{"label": "Streamlit dashboard", "href": "#dashboard", "step": 4}, {"spacer": true}]
+]' />
 
-## Quality
+Here's how it's built, in five phases:
 
-- **Data tests:** uniqueness, relationships, accepted values, salary rules, no missing months, freshness, schema drift, and a cross-source divergence warning
-- **Mutation check:** the data is corrupted 11 different ways, and each matching test must fail (11/11)
-- **Accuracy audit:** the extractor is scored against 50 hand-checked posts. It found a definition bug that understated remote work by about 5 points; work-mode accuracy went from 91% to 98% and seniority from 70% to 91%
-- **CI/CD:** the main branch is protected, so a change can't merge until lint, types, 90 unit tests, a dbt build with every data test, and 16 Playwright tests pass. After merge, the app and docs deploy automatically; a daily refresh publishes data only when tests pass; a smoke test checks the live site
-- **In production:** the daily refresh failed twice in its first week (a warehouse quota, then a government API outage). Both times nothing bad was published and an issue opened automatically; the fixes and a blameless write-up followed the same day
+| Phase | Tools |
+|---|---|
+| [1 · Data pipeline](#pipeline) | `Python` · `httpx` · `pydantic` · `regex` · `pandas` · `Parquet` · Databricks |
+| [2 · Model and test the data](#model) | `dbt` · `SQL` · `dbt_utils` · `pytest` |
+| [3 · CI/CD and automation](#cicd) | GitHub Actions · `ruff` · `mypy` · `pre-commit` · GitHub Releases · GitHub Pages |
+| [4 · Dashboard and tests](#dashboard) | `Streamlit` · `Plotly` · `Playwright` |
+| [5 · Analysis](#analysis) | `Jupyter` · `DuckDB` · `matplotlib` |
 
-## Findings (Nov 2023 to Sep 2026)
+<PhaseNav phases="pipeline:Pipeline, model:Model & test, cicd:CI/CD, dashboard:Dashboard, analysis:Analysis" />
 
-- Posts listing a salary rose from 13% to 31%
-- Remote-friendly posts fell from 67% to 55%; onsite-only rose from 15% to 25%
-- LLM/GenAI mentions nearly doubled, to 15% of posts
-- HN post volume fell 6% while official Information-sector openings fell 35%, so HN is not a stand-in for the broader market
+<h2 id="pipeline">1 · Data pipeline</h2>
 
-## Tools
+The pipeline is written in `Python` and runs once a day as a batch job.
 
-Python (pandas, pydantic, httpx), SQL, dbt, Databricks (Unity Catalog, Delta), Streamlit, Plotly, Playwright (TypeScript), pytest, Hypothesis, GitHub Actions, GitHub Pages, Claude Code
+It starts by calling two public APIs. One is the Algolia search API, which sits in front of YC’s Hacker News forum. The other is the BLS API for a survey called JOLTS, which is an official count of job openings. The requests go through `httpx`. If a service is busy or briefly down, the pipeline waits and tries again a few times before giving up.
+
+Before anything is saved, each record is checked against a data contract written with `pydantic`. The contract spells out what a valid record looks like, so mistakes like missing IDs or negative numbers get caught. Records that *fail* go into a quarantine table along with the reason they were rejected.
+
+<Toggle name="extractor">
+<Pane label="Raw listing">
+
+<p className="caption">Example of raw listing text</p>
+
+```text
+23andMe | Software Engineer II, Compute Pipelines | Palo Alto, CA |
+Hybrid or Remote (US) | Full-time | Bay Area Rate: $150k–$190k
+...Deep hands-on Python... Infrastructure as code (Terraform on AWS, Docker)...
+```
+
+</Pane>
+<Pane label="Extracted fields">
+
+<p className="caption">The fields the extractor pulled out of that listing</p>
+
+```python
+{'company': '23andMe', 'work_mode': 'remote', 'role_families': ['engineering'],
+ 'seniority': 'mid', 'locations': ['San Francisco Bay Area'],
+ 'salary_min': 150000, 'salary_max': 190000, 'salary_currency': 'USD', 'salary_period': 'year',
+ 'tech': ['aws', 'python', 'terraform']}
+```
+
+</Pane>
+</Toggle>
+
+Job posts are unstructured text, so the next step is pulling structure out of each one. A rules-based extractor, using `regex`, reads each post. It works out whether the job is remote, hybrid or onsite, plus the salary range, role, seniority, location and tech stack.
+
+All of that gets written into `Parquet` files using `pandas`.
+
+<p className="caption">Databricks Catalog Explorer: the raw Delta tables and the <code>landing</code> volume in Unity Catalog</p>
+
+![Databricks Catalog Explorer: the pulse_raw schema with its five raw tables and the landing volume](/images/databricks-catalog.png)
+
+Those files are uploaded to a volume in Databricks and loaded into Delta tables in Unity Catalog. Each load replaces the table instead of adding to it, so running the same day twice won't create duplicates.
+
+<details>
+<summary>More detail</summary>
+
+<p className="caption">Data contract for a raw post (<code>pydantic</code>), from <code>src/pulse/contracts.py</code></p>
+
+```python
+class RawPost(_Strict):
+    post_id: int
+    thread_id: int
+    thread_month: date
+    posted_at: datetime
+    text_html: str = Field(min_length=1)
+
+    @field_validator("posted_at")
+    @classmethod
+    def _not_in_future(cls, v: datetime) -> datetime:
+        if v > datetime.now(UTC):
+            raise ValueError("posted_at is in the future")
+        return v
+```
+
+If the source ever adds or renames a field, the data that doesn't fit is kept in its own column rather than dropped, which makes that kind of change easy to spot.
+
+</details>
+
+<h2 id="model">2 · Model and test the data</h2>
+
+<Slides name="dbt docs">
+<Slide caption="`dbt` lineage: raw sources (green) → staging → marts, with the custom tests">
+
+![dbt lineage graph: raw sources, staging models, fct_postings, and the marts](/images/hmp/dbt-lineage.png)
+
+</Slide>
+<Slide caption="`dbt` docs page for a mart: description, columns and tests">
+
+![dbt docs page for mart_monthly_summary with column descriptions and tests](/images/hmp/dbt-model.png)
+
+</Slide>
+</Slides>
+
+Once the raw data is in the warehouse, I model it with `dbt`, using `SQL`.
+
+The first layer is staging, where the raw tables get cleaned up and standardized.
+
+These feed the data marts: the tables that the dashboard and analysis actually read from. There's one with a row for every post and one that rolls everything up by month. Others break the data down by role, technology and salary, and the last one lines Hacker News up against the government numbers.
+
+Every model and column has a description. `dbt` turns all of it into this docs site, so anyone can look up what a field means and where it comes from.
+
+There are 52 data tests that run on every build, using `dbt`'s built-in tests and the `dbt_utils` package. They check that IDs are unique and every post belongs to a real thread. They also check for invalid and missing values.
+
+<p className="caption" id="mutation">Mutation check output from CI (5 of the 11 corruptions shown). More in the <a href="https://github.com/wacsvn/hiring-market-pulse/blob/main/docs/case-studies/tests-that-couldnt-fail.md">case study</a>.</p>
+
+```text
+CAUGHT  duplicate post              -> source_unique_raw_hn_posts_post_id [fail]
+CAUGHT  inverted salary range       -> salary_min_not_above_max [fail]
+CAUGHT  gap in JOLTS series         -> assert_no_missing_jolts_months [fail]
+CAUGHT  missing month of threads    -> assert_no_missing_hn_months [fail]
+CAUGHT  quarantine spike            -> assert_quarantine_rate_below_5pct [fail]
+...
+11/11 mutations caught
+```
+
+These tests are also *themselves* tested. A mutation check copies the data, breaks it in eleven different ways and confirms the right test fails each time. This is how a real gap was found and closed: a month with no posts at all could slip past the check that was supposed to catch missing months.
+
+To test whether the extractor read a post correctly, I put together 50 sample posts with answers drafted by AI and spot-checked by hand (20 verified, 99% agreement), and scored the extractor against them with `pytest`.
+
+<details>
+<summary>More detail</summary>
+
+They also check that values come from the expected list, that a minimum salary is never above the maximum, that no months are missing and that the data is fresh.
+
+<p className="caption">The one warn-level test: HN and official data diverging</p>
+
+![dbt docs page for the warn-level divergence test](/images/hmp/dbt-warn-test.png)
+
+One of them is deliberately a warning rather than a failure. It flags months where Hacker News and the official data move in very different directions. That's worth a person taking a look, but it doesn't necessarily mean anything is wrong.
+
+<p className="caption" id="accuracy">Extractor accuracy, as shown on the dashboard's Data quality tab</p>
+
+![Dashboard Data quality tab: extractor accuracy table](/images/hmp/dash-accuracy.png)
+
+Work arrangement and salary detection both came out at 98 percent.
+
+| Field | Accuracy |
+|---|---|
+| Work mode (remote / hybrid / onsite / unknown) | 98% |
+| Salary found when present, absent when not | 98% |
+| Salary values correct (of posts that state one) | 93% |
+| Role families exactly right | 70% |
+| Seniority | 91% |
+
+The audit also caught a definition problem that was undercounting remote jobs by about five points. After I fixed it, the overall trend held, which was reassuring. That score is now a baseline, and if a future change makes the extractor less accurate, the build fails.
+
+The fixes it prompted took work-mode accuracy from 91% to 98% and seniority from 70% to 91%.
+
+</details>
+
+<h2 id="cicd">3 · CI/CD and automation</h2>
+
+Everything mentioned thus far is automated with GitHub Actions.
+
+<Slides name="pull request gate">
+<Slide caption="What every pull request goes through">
+
+![Pull request flow: required checks, then merge to main, then the app and docs redeploy](/images/hmp/diagram-pr-gate.png)
+
+</Slide>
+<Slide caption="Branch protection on main: the four checks a change needs before it can merge">
+
+![Branch protection on main: four status checks required before merging](/images/branch-protection-page.png)
+
+</Slide>
+</Slides>
+
+Every change goes through a pull request, and the main branch is protected, so nothing can merge until the checks pass. They cover linting with `ruff`, type checking with `mypy` and 90 unit tests using `pytest` and `Hypothesis`. There's also a full `dbt` build with every data test, against a Databricks schema set aside for CI, and browser tests for the dashboard ([shown below](#dashboard)).
+
+The lint and type checks also run on my machine through `pre-commit` hooks before I commit, to avoid any CI surprises.
+
+<p className="caption" id="refresh">Daily refresh runs in GitHub Actions, including the two failures</p>
+
+![GitHub Actions: Refresh data workflow runs, with the workflow list in the sidebar](/images/hmp/gh-refresh-runs.png)
+
+Getting new data out is automated too. A scheduled workflow reruns the whole pipeline every day and publishes only if every test passes.
+
+<Toggle name="publish gate">
+<Pane label="All tests pass">
+
+<p className="caption">The published marts, as <code>Parquet</code> files on a GitHub Release</p>
+
+![GitHub Release data-latest with the published mart Parquet files](/images/hmp/gh-release.png)
+
+</Pane>
+<Pane label="A test fails">
+
+<p className="caption">Issue opened automatically by a failed refresh</p>
+
+![Auto-opened GitHub issue: Data refresh failed, listing the failed dbt nodes](/images/hmp/gh-failure-issue.png)
+
+</Pane>
+</Toggle>
+
+Publishing means uploading the finished marts as files to a GitHub Release. The dashboard reads from that release instead of querying Databricks directly. That keeps the app fast and free to run, and it means the dashboard only ever sees data that has already passed the tests.
+
+If something fails, nothing gets published and the dashboard keeps showing the last good data. A GitHub issue opens automatically with the details.
+
+Other workflows republish the `dbt` docs to GitHub Pages and check the live dashboard every few hours.
+
+<details>
+<summary>More detail</summary>
+
+<p className="caption"><a href="https://github.com/wacsvn/hiring-market-pulse/blob/main/docs/incidents/2026-10-22-refresh-failures.md">Incident report</a> for the two refresh failures</p>
+
+![Incident report for the 2026-10-22 refresh failures](/images/hmp/gh-incident.png)
+
+That setup got a real test in its first few days, when the daily refresh failed twice. The first time, I'd hit the table limit on Databricks' free tier. The second time, the government API went down. Both times the gate did its job: nothing bad was published, and an issue opened on its own. I fixed both the same day, added tests so they wouldn't come back, and wrote up an incident report.
+
+</details>
+
+<h2 id="dashboard">4 · Dashboard and tests</h2>
+
+The dashboard itself is built with `Streamlit` and `Plotly` and hosted on Streamlit Community Cloud. It’s designed to present the data in a digestible way that abstracts all of the engineering behind it.
+
+<p className="caption">Clicking through the dashboard tabs</p>
+
+<Clip src="/videos/hmp-tabs.webm" poster="/images/hmp/dash-hero.png" label="Clicking through the dashboard tabs" />
+
+Users can drag the date slider to see KPIs update, and browse through tabs for different insights.
+
+<p className="caption"><code>Playwright</code> browser tests from CI (5 of 16 shown)</p>
+
+```text
+✓ overview › KPIs follow the start of the date range
+✓ overview › KPIs follow the end of the date range
+✓ overview › salary KPI states its sample size and warns when it is too small
+✓ salaries › small groups are hidden until the reader opts in
+✓ empty state › says so when published data cannot be fetched
+...
+16 passed (54.7s)
+```
+
+The web app itself is tested with `Playwright`. There are 16 automated browser tests that run against a frozen copy of the data, so the expected numbers are always known. These check for user experience and bugs, like whether moving the date filter actually changes the cards.
+
+A separate smoke test opens the real site on a schedule to make sure it loads and every tab works.
+
+<details>
+<summary>More detail</summary>
+
+The headline numbers follow whatever date range you pick, and they show both where things started and where they ended up.
+
+<Slides name="dashboard details">
+<Slide caption="Every chart has its table one click away">
+
+![Dashboard chart with its "Show data" table expanded](/images/hmp/dash-show-data.png)
+
+</Slide>
+<Slide caption="Salary bands, with small groups hidden by default">
+
+![Salaries tab: salary bands, with small groups hidden until the reader opts in](/images/hmp/dash-salary-bands.png)
+
+</Slide>
+</Slides>
+
+Months with too few posts are flagged, and every chart has its table one click away. The colors are chosen to work for colorblind viewers.
+
+</details>
+
+<h2 id="analysis">5 · Analysis</h2>
+
+The last phase is the analysis, which I wrote up as a `Jupyter` notebook.
+
+<Toggle name="notebook">
+<Pane label="Chart">
+
+<p className="caption">HN posts vs official job openings, from the notebook</p>
+
+![Notebook chart: HN posts vs official job openings, indexed to Nov 2023](/images/hmp/notebook-hn-vs-jolts.png)
+
+</Pane>
+<Pane label="SQL behind it">
+
+<p className="caption"><code>DuckDB</code> <code>SQL</code> that produces the chart, run on the published <code>Parquet</code> files</p>
+
+```python
+bench = sql('''
+    select month, hn_postings, jolts_openings_k,
+           100 * hn_postings      / first_value(hn_postings)      over (order by month) as hn_index,
+           100 * jolts_openings_k / first_value(jolts_openings_k) over (order by month) as jolts_index
+    from mart_hn_vs_jolts
+    order by month
+''')
+```
+
+</Pane>
+</Toggle>
+
+Each finding comes with the `SQL` behind it, run with `DuckDB` straight on the published files. It also has a `matplotlib` chart, along with Markdown for plain-English explanations.
+
+<details>
+<summary>More detail</summary>
+
+For example, over the same period the number of Hacker News posts barely moved, while official job openings fell 35 percent. So this data says a lot about startup hiring but not much about the job market as a whole, and the write-up says that up front.
+
+</details>
+
+<p className="link-row">[Live dashboard](https://hiring-market-pulse.streamlit.app/) · [Data docs](https://wacsvn.github.io/hiring-market-pulse/) · [Code](https://github.com/wacsvn/hiring-market-pulse) · [Notebook](https://github.com/wacsvn/hiring-market-pulse/blob/main/analysis/hiring_market_findings.ipynb)</p>
