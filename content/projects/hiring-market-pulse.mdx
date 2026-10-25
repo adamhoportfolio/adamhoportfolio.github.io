@@ -2,10 +2,10 @@
 title: "Hiring Market Pulse - Tested Data Pipeline on Databricks + dbt"
 date: "2026-10-22"
 category: "Data Pipeline & Quality"
-summary: "A daily pipeline that turns 12,000+ Hacker News job posts and BLS job-openings data into a dashboard, published only after 52 dbt data tests pass. The tests are themselves tested, and the text extraction is scored against hand-checked posts."
+summary: "A daily pipeline that turns 11,500+ Hacker News job posts and BLS job-openings data into a dashboard, published only after 52 dbt data tests pass. The tests are themselves tested, and the text extraction is scored against labeled posts, spot-checked by hand."
 image: "/images/hiring-market-pulse-thumb.jpg"
 ---
-<Callout title="Check out the resources for this project here">
+<Callout title="Project links">
 - [Live dashboard (`Streamlit`)](https://hiring-market-pulse.streamlit.app/)
 - [Data model documentation (`dbt` docs: lineage, columns, tests)](https://wacsvn.github.io/hiring-market-pulse/)
 - [Code, tests, and CI (GitHub)](https://github.com/wacsvn/hiring-market-pulse)
@@ -16,7 +16,7 @@ image: "/images/hiring-market-pulse-thumb.jpg"
 
 Hiring Market Pulse is a data product I built that tracks how tech startups are hiring, based on the job posts in Y Combinator’s monthly thread.
 
-It covers over 12k listings, alongside job-openings data from the Bureau of Labor Statistics. Every day it pulls in the latest posts and refreshes this dashboard.
+It covers over 11,500 listings, alongside job-openings data from the Bureau of Labor Statistics. Every day it pulls in the latest posts and refreshes [the dashboard](https://hiring-market-pulse.streamlit.app/).
 
 | Area | Tools |
 |---|---|
@@ -154,7 +154,7 @@ Completed with 1 warning:
 Done. PASS=62 WARN=1 ERROR=0 SKIP=0 NO-OP=0 REUSED=0 TOTAL=63
 ```
 
-<p className="caption"><code>dbt build</code> output from a daily refresh run</p>
+<p className="caption"><code>dbt build</code> output from a daily refresh run (52 tests + 11 models = 63 nodes)</p>
 
 There are 52 data tests that run on every build, using `dbt`'s built-in tests and the `dbt_utils` package. They check that IDs are unique and every post belongs to a real thread. They also check for invalid and missing values.
 
@@ -172,7 +172,7 @@ CAUGHT  quarantine spike            -> assert_quarantine_rate_below_5pct [fail]
 
 These tests are also *themselves* tested. A mutation check copies the data, breaks it in eleven different ways and confirms the right test fails each time. This is how a real gap was found and closed: a month with no posts at all could slip past the check that was supposed to catch missing months.
 
-To test whether the extractor read a post correctly, I put together 50 sample posts with hand-checked answers and scored the extractor against them with `pytest`.
+To test whether the extractor read a post correctly, I put together 50 sample posts with answers drafted by AI and spot-checked by hand (20 verified, 99% agreement), and scored the extractor against them with `pytest`.
 
 <details>
 <summary>More detail</summary>
@@ -375,7 +375,7 @@ The data covers companies that post in Hacker News' monthly "Who is hiring?" thr
 
 - Posts listing a salary rose from 13% to 31%
 - Remote-friendly posts fell from 67% to 55%; onsite-only rose from 15% to 25%
-- LLM/GenAI mentions nearly doubled, to 15% of posts
+- LLM/GenAI mentions doubled, from 8% to 16% of posts
 - HN post volume fell 6% while official Information-sector openings fell 35%, so HN is not a stand-in for the broader market
 
-If you want to dig in, the dashboard, the data docs and the code are all linked above.
+<p className="link-row">[Live dashboard](https://hiring-market-pulse.streamlit.app/) · [Data docs](https://wacsvn.github.io/hiring-market-pulse/) · [Code](https://github.com/wacsvn/hiring-market-pulse) · [Notebook](https://github.com/wacsvn/hiring-market-pulse/blob/main/analysis/hiring_market_findings.ipynb)</p>

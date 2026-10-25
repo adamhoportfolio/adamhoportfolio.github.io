@@ -138,6 +138,12 @@ a { color: inherit; }
 .phase-nav button { flex: none; padding: 4px 10px; font-size: 12px; }
 .phase-num { display: inline-grid; place-items: center; width: 18px; height: 18px; margin-right: 2px; border-radius: 50%; background: var(--line); color: var(--text); font-size: 11px; font-weight: 700; }
 .prose h2[id] { scroll-margin-top: 64px; }
+.heading-link { margin-left: 8px; padding: 0 4px; border: 0; background: none; color: var(--muted); font: inherit; cursor: pointer; opacity: 0; transition: opacity .15s; }
+.prose h2:hover .heading-link, .heading-link:focus-visible { opacity: 1; }
+@media (hover: none) { .heading-link { opacity: .5; } }
+.heading-link:hover { color: var(--link); }
+.heading-link[data-copied]::after { content: "copied"; margin-left: 6px; font-family: var(--sans); font-size: 12px; color: var(--link); }
+.prose .link-row { text-align: center; margin-top: 2.4em; }
 
 /* flow diagram (components/Flow.js) */
 .flow { margin: 1.6em auto 1.8em; max-width: 520px; }

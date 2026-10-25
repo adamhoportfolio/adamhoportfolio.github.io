@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { getAllProjects, getProject, formatDate } from "@/lib/posts";
 import Mdx from "@/components/Mdx";
 import Video from "@/components/Video";
+import HeadingLinks from "@/components/HeadingLinks";
 
 export const dynamicParams = false; // required for static export
 
@@ -42,10 +43,11 @@ export default async function Project({ params }) {
       ) : null}
       <h1 className="post-title">{p.title}</h1>
       <p className="byline center">
-        {formatDate(p.date)} <span>In</span> {p.category}
+        {formatDate(p.date)} <span>In</span> {p.category} <span>·</span> {p.readingMinutes} min read
       </p>
       <div className="prose">
         <Mdx source={p.content} format={p.format} />
+        <HeadingLinks />
       </div>
     </article>
   );
